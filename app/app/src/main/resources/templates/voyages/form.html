@@ -1,0 +1,109 @@
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('Nouveau Voyage')}"></head>
+<body>
+    <div th:replace="~{fragments/common :: navbar}"></div>
+    
+    <div class="container-fluid px-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-plus-circle"></i> Créer un Nouveau Voyage
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/voyages/creer}" th:object="${voyage}" method="post">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Trajet</label>
+                                    <select th:field="*{trajet.id}" class="form-select" required>
+                                        <option value="">-- Sélectionner --</option>
+                                        <option th:each="t : ${trajets}" 
+                                                th:value="${t.id}"
+                                                th:text="${t.villeDepart} + ' → ' + ${t.villeArrivee} + ' (' + ${t.distanceKm} + ' km)'">
+                                            Tana → Tamatave (370 km)
+                                        </option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Véhicule</label>
+                                    <select th:field="*{vehicule.id}" class="form-select" required>
+                                        <option value="">-- Sélectionner --</option>
+                                        <option th:each="v : ${vehicules}" 
+                                                th:value="${v.id}"
+                                                th:text="${v.immatriculation} + ' - ' + ${v.typeVehicule.nom} + ' (' + ${v.nombrePlaces} + ' places)'">
+                                            1234 TAA - Sprinter (15 places)
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Chauffeur</label>
+                                    <select th:field="*{chauffeur.id}" class="form-select" required>
+                                        <option value="">-- Sélectionner --</option>
+                                        <option th:each="c : ${chauffeurs}" 
+                                                th:value="${c.id}"
+                                                th:text="${c.nom} + ' ' + ${c.prenom}">
+                                            RAKOTO Jean
+                                        </option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Aide Chauffeur</label>
+                                    <select th:field="*{aideChauffeur.id}" class="form-select">
+                                        <option value="">-- Optionnel --</option>
+                                        <option th:each="a : ${aides}" 
+                                                th:value="${a.id}"
+                                                th:text="${a.nom} + ' ' + ${a.prenom}">
+                                            RASOA Pierre
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Date et Heure de Départ</label>
+                                    <input type="datetime-local" th:field="*{dateDepart}" class="form-control" required>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Date et Heure d'Arrivée Prévue</label>
+                                    <input type="datetime-local" th:field="*{dateArriveePrevue}" class="form-control">
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Prix par Place (Ar)</label>
+                                <input type="number" th:field="*{prixParPlace}" class="form-control" min="1000" step="1000" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Remarques</label>
+                                <textarea th:field="*{remarques}" class="form-control" rows="3"></textarea>
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="/voyages" class="btn btn-secondary btn-custom">
+                                    <i class="fas fa-times"></i> Annuler
+                                </a>
+                                <button type="submit" class="btn btn-success btn-custom">
+                                    <i class="fas fa-check"></i> Créer le Voyage
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div th:replace="~{fragments/common :: footer}"></div>
+    <div th:replace="~{fragments/common :: scripts}"></div>
+</body>
+</html>

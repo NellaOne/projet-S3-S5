@@ -1,0 +1,162 @@
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('Détails Voyage')}"></head>
+<body>
+    <div th:replace="~{fragments/common :: navbar}"></div>
+    
+    <div class="container-fluid px-4">
+        <div class="row mb-3">
+            <div class="col">
+                <h2><i class="fas fa-route"></i> Détails du Voyage</h2>
+            </div>
+            <div class="col text-end">
+                <a href="/voyages" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Retour
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        Voyage <strong th:text="${voyage.codeVoyage}">VOY123</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Trajet:</strong><br>
+                                <span th:text="${voyage.trajet.villeDepart}">Tana</span> → 
+                                <span th:text="${voyage.trajet.villeArrivee}">Tamatave</span>
+                                (<span th:text="${voyage.trajet.distanceKm}">370</span> km)
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Statut:</strong><br>
+                                <span th:if="${voyage.statut == 'PLANIFIE'}" 
+                                      class="badge bg-primary" th:text="${voyage.statut}">PLANIFIE</span>
+                                <span th:if="${voyage.statut == 'EN_COURS'}" 
+                                      class="badge bg-warning" th:text="${voyage.statut}">EN_COURS</span>
+                                <span th:if="${voyage.statut == 'TERMINE'}" 
+                                      class="badge bg-success" th:text="${voyage.statut}">TERMINE</span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Véhicule:</strong><br>
+                                <span th:text="${voyage.vehicule.immatriculation}">1234 TAA</span> - 
+                                <span th:text="${voyage.vehicule.typeVehicule.nom}">Sprinter</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Chauffeur:</strong><br>
+                                <span th:text="${voyage.chauffeur.nom}">RAKOTO</span>
+                                <span th:text="${voyage.chauffeur.prenom}">Jean</span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Date Départ:</strong><br>
+                                <span th:text="${#temporals.format(voyage.dateDepart, 'dd/MM/yyyy HH:mm')}">
+                                    10/01/2026 08:00
+                                </span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Places Disponibles:</strong><br>
+                                <span class="badge bg-info fs-5" th:text="${voyage.nombrePlacesDisponibles}">5</span>
+                                / <span th:text="${voyage.vehicule.nombrePlaces}">15</span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Prix par Place:</strong><br>
+                                <span class="fs-4 text-success">
+                                    <span th:text="${#numbers.formatDecimal(voyage.prixParPlace, 0, 'COMMA', 0, 'POINT')}">50000</span> Ar
+                                </span>
+                            </div>
+                        </div>
+
+                        <div th:if="${voyage.remarques}" class="mb-3">
+                            <strong>Remarques:</strong><br>
+                            <p th:text="${voyage.remarques}">Aucune remarque</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="card mt-3" th:if="${voyage.statut != 'TERMINE'}">
+                    <div class="card-header">Actions</div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <form th:if="${voyage.statut == 'PLANIFIE'}" 
+                                  th:action="@{/voyages/{id}/demarrer(id=${voyage.id})}" 
+                                  method="post">
+                                <button type="submit" class="btn btn-warning btn-lg w-100">
+                                    <i class="fas fa-play"></i> Démarrer le Voyage
+                                </button>
+                            </form>
+                            
+                            <form th:if="${voyage.statut == 'EN_COURS'}" 
+                                  th:action="@{/voyages/{id}/terminer(id=${voyage.id})}" 
+                                  method="post">
+                                <button type="submit" class="btn btn-success btn-lg w-100">
+                                    <i class="fas fa-check"></i> Terminer le Voyage
+                                </button>
+                            </form>
+                            
+                            <a th:href="@{/reservations/nouvelle(voyageId=${voyage.id})}" 
+                               class="btn btn-primary btn-lg">
+                                <i class="fas fa-ticket-alt"></i> Nouvelle Réservation
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">Statistiques</div>
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-users fa-3x text-primary"></i>
+                            <h3 class="mt-2">
+                                <span th:text="${voyage.vehicule.nombrePlaces - voyage.nombrePlacesDisponibles}">10</span> / 
+                                <span th:text="${voyage.vehicule.nombrePlaces}">15</span>
+                            </h3>
+                            <p>Réservations / Capacité</p>
+                        </div>
+                        <div class="progress" style="height: 30px;">
+                            <div class="progress-bar bg-primary" role="progressbar"
+                                 th:style="'width: ' + ${(voyage.vehicule.nombrePlaces - voyage.nombrePlacesDisponibles) * 100.0 / voyage.vehicule.nombrePlaces} + '%'"
+                                 th:text="${#numbers.formatDecimal((voyage.vehicule.nombrePlaces - voyage.nombrePlacesDisponibles) * 100.0 / voyage.vehicule.nombrePlaces, 0, 'COMMA', 0, 'POINT')} + '%'">
+                                50%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header">Détails Chauffeur</div>
+                    <div class="card-body">
+                        <p><strong>Chauffeur:</strong><br>
+                        <span th:text="${voyage.chauffeur.nom}">RAKOTO</span>
+                        <span th:text="${voyage.chauffeur.prenom}">Jean</span></p>
+                        <p><strong>Contact:</strong><br>
+                        <span th:text="${voyage.chauffeur.telephone}">032 12 345 67</span></p>
+                        <div th:if="${voyage.aideChauffeur}">
+                            <p><strong>Aide Chauffeur:</strong><br>
+                            <span th:text="${voyage.aideChauffeur.nom}">RASOA</span>
+                            <span th:text="${voyage.aideChauffeur.prenom}">Pierre</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div th:replace="~{fragments/common :: footer}"></div>
+    <div th:replace="~{fragments/common :: scripts}"></div>
+</body>
+</html>

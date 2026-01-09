@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('Détails Véhicule')}"></head>
+<body>
+    <div th:replace="~{fragments/common :: navbar}"></div>
+    
+    <div class="container-fluid px-4">
+        <div class="row mb-3">
+            <div class="col">
+                <h2><i class="fas fa-bus-alt"></i> Détails du Véhicule</h2>
+            </div>
+            <div class="col text-end">
+                <a href="/vehicules" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Retour
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <strong th:text="${vehicule.immatriculation}">1234 TAA</strong>
+                        <span th:if="${vehicule.statut == 'DISPONIBLE'}" 
+                              class="badge bg-success float-end" th:text="${vehicule.statut}">DISPONIBLE</span>
+                        <span th:if="${vehicule.statut == 'EN_SERVICE'}" 
+                              class="badge bg-warning float-end" th:text="${vehicule.statut}">EN_SERVICE</span>
+                        <span th:if="${vehicule.statut == 'EN_MAINTENANCE'}" 
+                              class="badge bg-danger float-end" th:text="${vehicule.statut}">EN_MAINTENANCE</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Type Véhicule:</strong><br>
+                                <span th:text="${vehicule.typeVehicule.nom}">Sprinter</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Marque/Modèle:</strong><br>
+                                <span th:text="${vehicule.marque}">Mercedes</span> - 
+                                <span th:text="${vehicule.modele}">Sprinter</span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Année:</strong><br>
+                                <span th:text="${vehicule.annee}">2020</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Numéro Châssis:</strong><br>
+                                <span th:text="${vehicule.numeroChassis}">VF73V36789123456</span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Nombre de Places:</strong><br>
+                                <span class="badge bg-info fs-5" th:text="${vehicule.nombrePlaces}">15</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Capacité Bagages (kg):</strong><br>
+                                <span th:text="${vehicule.capaciteBagages}">2500</span> kg
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Kilométrage Actuel:</strong><br>
+                                <span class="fs-4 text-info">
+                                    <span th:text="${#numbers.formatDecimal(vehicule.kilometrageActuel, 0, 'COMMA', 0, 'POINT')}">120000</span> km
+                                </span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Prochaine Visite Technique:</strong><br>
+                                <span th:if="${vehicule.dateProchaineVisiteTechnique}" 
+                                      th:text="${#temporals.format(vehicule.dateProchaineVisiteTechnique, 'dd/MM/yyyy')}">
+                                    15/02/2026
+                                </span>
+                                <span th:unless="${vehicule.dateProchaineVisiteTechnique}">Non définie</span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col">
+                                <strong>Garage:</strong><br>
+                                <span th:text="${vehicule.garage.nom}">Garage Principal</span>
+                            </div>
+                        </div>
+
+                        <div th:if="${vehicule.description}" class="mb-3">
+                            <strong>Description:</strong><br>
+                            <p th:text="${vehicule.description}">Aucune description</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="card mt-3">
+                    <div class="card-header">Actions</div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a th:href="@{/vehicules/{id}/editer(id=${vehicule.id})}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-edit"></i> Modifier le Véhicule
+                            </a>
+                            <button th:if="${vehicule.statut == 'DISPONIBLE'}" 
+                                    th:formaction="@{/vehicules/{id}/maintenance(id=${vehicule.id})}" 
+                                    class="btn btn-warning btn-lg" type="submit">
+                                <i class="fas fa-tools"></i> Mettre en Maintenance
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">Historique Dépenses</div>
+                    <div class="card-body">
+                        <p><strong>Total Dépenses:</strong><br>
+                        <span class="fs-5 text-danger">
+                            <span th:text="${#numbers.formatDecimal(vehicule.totalDepenses, 0, 'COMMA', 0, 'POINT')}">125000</span> Ar
+                        </span></p>
+                        
+                        <p class="mt-3"><strong>Carburant:</strong><br>
+                        <span th:text="${#numbers.formatDecimal(vehicule.depensesCarburant, 0, 'COMMA', 0, 'POINT')}">50000</span> Ar</p>
+                        
+                        <p><strong>Réparations:</strong><br>
+                        <span th:text="${#numbers.formatDecimal(vehicule.depensesReparations, 0, 'COMMA', 0, 'POINT')}">75000</span> Ar</p>
+
+                        <a href="/finances?vehicule=" th:href="@{/finances?vehicule={id}(id=${vehicule.id})}" class="btn btn-info btn-sm w-100 mt-3">
+                            <i class="fas fa-chart-bar"></i> Voir les Finances
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header">Voyages Récents</div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            <a th:each="v : ${voyagesRecents}" th:href="@{/voyages/{id}(id=${v.id})}" 
+                               class="list-group-item list-group-item-action">
+                                <small th:text="${v.codeVoyage}">VOY123</small><br>
+                                <span th:text="${v.trajet.villeDepart}">Tana</span> → 
+                                <span th:text="${v.trajet.villeArrivee}">Tamatave</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div th:replace="~{fragments/common :: footer}"></div>
+    <div th:replace="~{fragments/common :: scripts}"></div>
+</body>
+</html>

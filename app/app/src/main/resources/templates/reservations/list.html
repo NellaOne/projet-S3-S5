@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('Liste des Réservations')}"></head>
+<body>
+    <div th:replace="~{fragments/common :: navbar}"></div>
+    
+    <div class="container-fluid px-4">
+        <div class="row mb-3">
+            <div class="col">
+                <h2><i class="fas fa-ticket-alt"></i> Gestion des Réservations</h2>
+            </div>
+            <div class="col text-end">
+                <a href="/reservations/nouvelle" class="btn btn-primary btn-custom">
+                    <i class="fas fa-plus"></i> Nouvelle Réservation
+                </a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Client</th>
+                                <th>Voyage</th>
+                                <th>Places</th>
+                                <th>Montant</th>
+                                <th>Payé</th>
+                                <th>Restant</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="r : ${reservations}">
+                                <td><strong th:text="${r.codeReservation}">RES123</strong></td>
+                                <td>
+                                    <span th:text="${r.client.nom}">RAZAFY</span>
+                                    <span th:text="${r.client.prenom}">Marie</span>
+                                </td>
+                                <td>
+                                    <a th:href="@{/voyages/{id}(id=${r.voyage.id})}" 
+                                       th:text="${r.voyage.codeVoyage}">VOY123</a>
+                                </td>
+                                <td><span class="badge bg-info" th:text="${r.nombrePlaces}">2</span></td>
+                                <td th:text="${#numbers.formatDecimal(r.montantTotal, 0, 'COMMA', 0, 'POINT')} + ' Ar'">
+                                    100000 Ar
+                                </td>
+                                <td class="text-success">
+                                    <strong th:text="${#numbers.formatDecimal(r.montantPaye, 0, 'COMMA', 0, 'POINT')} + ' Ar'">
+                                        50000 Ar
+                                    </strong>
+                                </td>
+                                <td class="text-danger">
+                                    <strong th:text="${#numbers.formatDecimal(r.montantRestant, 0, 'COMMA', 0, 'POINT')} + ' Ar'">
+                                        50000 Ar
+                                    </strong>
+                                </td>
+                                <td>
+                                    <span th:if="${r.statut == 'EN_ATTENTE'}" 
+                                          class="badge bg-warning" th:text="${r.statut}">EN_ATTENTE</span>
+                                    <span th:if="${r.statut == 'CONFIRME'}" 
+                                          class="badge bg-info" th:text="${r.statut}">CONFIRME</span>
+                                    <span th:if="${r.statut == 'PAYE'}" 
+                                          class="badge bg-success" th:text="${r.statut}">PAYE</span>
+                                    <span th:if="${r.statut == 'ANNULE'}" 
+                                          class="badge bg-danger" th:text="${r.statut}">ANNULE</span>
+                                </td>
+                                <td>
+                                    <a th:href="@{/reservations/{id}(id=${r.id})}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div th:replace="~{fragments/common :: footer}"></div>
+    <div th:replace="~{fragments/common :: scripts}"></div>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('Tableau de Bord')}"></head>
+<body>
+    <div th:replace="~{fragments/common :: navbar}"></div>
+    
+    <div class="container-fluid px-4">
+        <!-- Alert Success -->
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+            <i class="fas fa-check-circle"></i> <span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- Statistiques -->
+        <div class="row">
+            <div class="col-md-3">
+                <div class="stat-card" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);">
+                    <i class="fas fa-route"></i>
+                    <h3 th:text="${totalVoyages}">0</h3>
+                    <p>Total Voyages</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">
+                    <i class="fas fa-road"></i>
+                    <h3 th:text="${voyagesEnCours}">0</h3>
+                    <p>En Cours</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card" style="background: linear-gradient(135deg, #27ae60 0%, #229954 100%);">
+                    <i class="fas fa-ticket-alt"></i>
+                    <h3 th:text="${totalReservations}">0</h3>
+                    <p>Réservations</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card" style="background: linear-gradient(135deg, #f39c12 0%, #d68910 100%);">
+                    <i class="fas fa-bus"></i>
+                    <h3 th:text="${vehiculesDisponibles}">0</h3>
+                    <p>Véhicules Dispo</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenu Principal -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-route"></i> Voyages Récents
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Trajet</th>
+                                        <th>Départ</th>
+                                        <th>Statut</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="v : ${voyagesRecents}">
+                                        <td>
+                                            <a th:href="@{/voyages/{id}(id=${v.id})}" 
+                                               th:text="${v.codeVoyage}">VOY123</a>
+                                        </td>
+                                        <td>
+                                            <span th:text="${v.trajet.villeDepart}">Tana</span> → 
+                                            <span th:text="${v.trajet.villeArrivee}">Tamatave</span>
+                                        </td>
+                                        <td th:text="${#temporals.format(v.dateDepart, 'dd/MM/yyyy HH:mm')}">
+                                            10/01/2026 08:00
+                                        </td>
+                                        <td>
+                                            <span th:if="${v.statut == 'PLANIFIE'}" 
+                                                  class="badge bg-info" th:text="${v.statut}">PLANIFIE</span>
+                                            <span th:if="${v.statut == 'EN_COURS'}" 
+                                                  class="badge bg-warning" th:text="${v.statut}">EN_COURS</span>
+                                            <span th:if="${v.statut == 'TERMINE'}" 
+                                                  class="badge bg-success" th:text="${v.statut}">TERMINE</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-clock"></i> Actions Rapides
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a href="/voyages/nouveau" class="btn btn-primary btn-lg">
+                                <i class="fas fa-plus-circle"></i> Nouveau Voyage
+                            </a>
+                            <a href="/reservations/nouvelle" class="btn btn-success btn-lg">
+                                <i class="fas fa-ticket-alt"></i> Nouvelle Réservation
+                            </a>
+                            <a href="/voyages/disponibles" class="btn btn-info btn-lg">
+                                <i class="fas fa-search"></i> Voyages Disponibles
+                            </a>
+                            <a href="/finances" class="btn btn-warning btn-lg">
+                                <i class="fas fa-chart-bar"></i> Voir Finances
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div th:replace="~{fragments/common :: footer}"></div>
+    <div th:replace="~{fragments/common :: scripts}"></div>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('Liste des Véhicules')}"></head>
+<body>
+    <div th:replace="~{fragments/common :: navbar}"></div>
+    
+    <div class="container-fluid px-4">
+        <div class="row mb-3">
+            <div class="col">
+                <h2><i class="fas fa-bus-alt"></i> Gestion des Véhicules</h2>
+            </div>
+            <div class="col text-end">
+                <a href="/vehicules/nouveau" class="btn btn-primary btn-custom">
+                    <i class="fas fa-plus"></i> Nouveau Véhicule
+                </a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Immatriculation</th>
+                                <th>Type</th>
+                                <th>Marque/Modèle</th>
+                                <th>Places</th>
+                                <th>Kilométrage</th>
+                                <th>Prochaine Visite</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="v : ${vehicules}">
+                                <td><strong th:text="${v.immatriculation}">1234 TAA</strong></td>
+                                <td th:text="${v.typeVehicule.nom}">Sprinter</td>
+                                <td>
+                                    <span th:text="${v.marque}">Mercedes</span> - 
+                                    <span th:text="${v.modele}">Sprinter</span>
+                                </td>
+                                <td><span class="badge bg-info" th:text="${v.nombrePlaces}">15</span></td>
+                                <td th:text="${#numbers.formatDecimal(v.kilometrageActuel, 0, 'COMMA', 0, 'POINT')} + ' km'">
+                                    120000 km
+                                </td>
+                                <td th:text="${v.dateProchaineVisiteTechnique != null} ? ${#temporals.format(v.dateProchaineVisiteTechnique, 'dd/MM/yyyy')} : '-'">
+                                    15/02/2026
+                                </td>
+                                <td>
+                                    <span th:if="${v.statut == 'DISPONIBLE'}" 
+                                          class="badge bg-success" th:text="${v.statut}">DISPONIBLE</span>
+                                    <span th:if="${v.statut == 'EN_SERVICE'}" 
+                                          class="badge bg-warning" th:text="${v.statut}">EN_SERVICE</span>
+                                    <span th:if="${v.statut == 'EN_MAINTENANCE'}" 
+                                          class="badge bg-danger" th:text="${v.statut}">EN_MAINTENANCE</span>
+                                </td>
+                                <td>
+                                    <a th:href="@{/vehicules/{id}(id=${v.id})}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div th:replace="~{fragments/common :: footer}"></div>
+    <div th:replace="~{fragments/common :: scripts}"></div>
+</body>
+</html>

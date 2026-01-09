@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('Finances')}"></head>
+<body>
+    <div th:replace="~{fragments/common :: navbar}"></div>
+    
+    <div class="container-fluid px-4">
+        <div class="row mb-3">
+            <div class="col">
+                <h2><i class="fas fa-chart-line"></i> Tableau de Bord Financier</h2>
+            </div>
+        </div>
+
+        <!-- Formulaire de sélection de période -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form th:action="@{/finances/bilan}" method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Date Début</label>
+                        <input type="date" name="dateDebut" class="form-control" 
+                               th:value="${dateDebut}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Date Fin</label>
+                        <input type="date" name="dateFin" class="form-control" 
+                               th:value="${dateFin}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search"></i> Générer le Bilan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Statistiques Financières -->
+        <div class="row">
+            <div class="col-md-3">
+                <div class="stat-card" style="background: linear-gradient(135deg, #27ae60 0%, #229954 100%);">
+                    <i class="fas fa-arrow-up"></i>
+                    <h3 th:text="${#numbers.formatDecimal(recettesTotal, 0, 'COMMA', 0, 'POINT')} + ' Ar'">
+                        500000 Ar
+                    </h3>
+                    <p>Recettes Totales</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);">
+                    <i class="fas fa-users"></i>
+                    <h3 th:text="${#numbers.formatDecimal(recettesReservations, 0, 'COMMA', 0, 'POINT')} + ' Ar'">
+                        400000 Ar
+                    </h3>
+                    <p>Réservations</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card" style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">
+                    <i class="fas fa-box"></i>
+                    <h3 th:text="${#numbers.formatDecimal(recettesColis, 0, 'COMMA', 0, 'POINT')} + ' Ar'">
+                        100000 Ar
+                    </h3>
+                    <p>Colis</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">
+                    <i class="fas fa-arrow-down"></i>
+                    <h3 th:text="${#numbers.formatDecimal(depenses, 0, 'COMMA', 0, 'POINT')} + ' Ar'">
+                        200000 Ar
+                    </h3>
+                    <p>Dépenses</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bénéfice -->
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card" th:classappend="${benefice >= 0} ? 'border-success' : 'border-danger'">
+                    <div class="card-body text-center">
+                        <h3 th:classappend="${benefice >= 0} ? 'text-success' : 'text-danger'">
+                            <i class="fas" th:classappend="${benefice >= 0} ? 'fa-arrow-circle-up' : 'fa-arrow-circle-down'"></i>
+                            Bénéfice Net: 
+                            <span th:text="${#numbers.formatDecimal(benefice, 0, 'COMMA', 0, 'POINT')} + ' Ar'">
+                                300000 Ar
+                            </span>
+                        </h3>
+                        <p class="text-muted">
+                            Période du <span th:text="${#temporals.format(dateDebut, 'dd/MM/yyyy')}">01/01/2026</span>
+                            au <span th:text="${#temporals.format(dateFin, 'dd/MM/yyyy')}">31/01/2026</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Boutons d'action -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-money-bill-wave"></i> Gestion des Dépenses
+                    </div>
+                    <div class="card-body">
+                        <a href="/finances/depenses" class="btn btn-primary btn-lg w-100 mb-2">
+                            <i class="fas fa-list"></i> Voir Toutes les Dépenses
+                        </a>
+                        <button type="button" class="btn btn-success btn-lg w-100" 
+                                data-bs-toggle="modal" data-bs-target="#newDepenseModal">
+                            <i class="fas fa-plus"></i> Nouvelle Dépense
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-file-export"></i> Rapports
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-info btn-lg w-100 mb-2">
+                            <i class="fas fa-file-pdf"></i> Exporter en PDF
+                        </button>
+                        <button class="btn btn-warning btn-lg w-100">
+                            <i class="fas fa-file-excel"></i> Exporter en Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div th:replace="~{fragments/common :: footer}"></div>
+    <div th:replace="~{fragments/common :: scripts}"></div>
+</body>
+</html>

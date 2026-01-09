@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('Liste des Voyages')}"></head>
+<body>
+    <div th:replace="~{fragments/common :: navbar}"></div>
+    
+    <div class="container-fluid px-4">
+        <div class="row mb-3">
+            <div class="col">
+                <h2><i class="fas fa-route"></i> Gestion des Voyages</h2>
+            </div>
+            <div class="col text-end">
+                <a href="/voyages/nouveau" class="btn btn-primary btn-custom">
+                    <i class="fas fa-plus"></i> Nouveau Voyage
+                </a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Trajet</th>
+                                <th>Véhicule</th>
+                                <th>Chauffeur</th>
+                                <th>Date Départ</th>
+                                <th>Places Dispo</th>
+                                <th>Prix</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="v : ${voyages}">
+                                <td><strong th:text="${v.codeVoyage}">VOY123</strong></td>
+                                <td>
+                                    <span th:text="${v.trajet.villeDepart}">Tana</span> → 
+                                    <span th:text="${v.trajet.villeArrivee}">Tamatave</span>
+                                </td>
+                                <td th:text="${v.vehicule.immatriculation}">1234 TAA</td>
+                                <td>
+                                    <span th:text="${v.chauffeur.nom}">RAKOTO</span>
+                                    <span th:text="${v.chauffeur.prenom}">Jean</span>
+                                </td>
+                                <td th:text="${#temporals.format(v.dateDepart, 'dd/MM/yyyy HH:mm')}">
+                                    10/01/2026 08:00
+                                </td>
+                                <td>
+                                    <span class="badge bg-info" th:text="${v.nombrePlacesDisponibles}">5</span>
+                                </td>
+                                <td th:text="${#numbers.formatDecimal(v.prixParPlace, 0, 'COMMA', 0, 'POINT')} + ' Ar'">
+                                    50000 Ar
+                                </td>
+                                <td>
+                                    <span th:if="${v.statut == 'PLANIFIE'}" 
+                                          class="badge bg-primary" th:text="${v.statut}">PLANIFIE</span>
+                                    <span th:if="${v.statut == 'EN_COURS'}" 
+                                          class="badge bg-warning" th:text="${v.statut}">EN_COURS</span>
+                                    <span th:if="${v.statut == 'TERMINE'}" 
+                                          class="badge bg-success" th:text="${v.statut}">TERMINE</span>
+                                    <span th:if="${v.statut == 'ANNULE'}" 
+                                          class="badge bg-danger" th:text="${v.statut}">ANNULE</span>
+                                </td>
+                                <td>
+                                    <a th:href="@{/voyages/{id}(id=${v.id})}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div th:replace="~{fragments/common :: footer}"></div>
+    <div th:replace="~{fragments/common :: scripts}"></div>
+</body>
+</html>

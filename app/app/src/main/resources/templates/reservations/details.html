@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('Détails Réservation')}"></head>
+<body>
+    <div th:replace="~{fragments/common :: navbar}"></div>
+    
+    <div class="container-fluid px-4">
+        <div class="row mb-3">
+            <div class="col">
+                <h2><i class="fas fa-ticket-alt"></i> Détails de la Réservation</h2>
+            </div>
+            <div class="col text-end">
+                <a href="/reservations" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Retour
+                </a>
+            </div>
+        </div>
+
+        <!-- Alert Success -->
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+            <i class="fas fa-check-circle"></i> <span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        Réservation <strong th:text="${reservation.codeReservation}">RES123</strong>
+                        <span th:if="${reservation.statut == 'EN_ATTENTE'}" 
+                              class="badge bg-warning float-end" th:text="${reservation.statut}">EN_ATTENTE</span>
+                        <span th:if="${reservation.statut == 'CONFIRME'}" 
+                              class="badge bg-info float-end" th:text="${reservation.statut}">CONFIRME</span>
+                        <span th:if="${reservation.statut == 'PAYE'}" 
+                              class="badge bg-success float-end" th:text="${reservation.statut}">PAYE</span>
+                        <span th:if="${reservation.statut == 'ANNULE'}" 
+                              class="badge bg-danger float-end" th:text="${reservation.statut}">ANNULE</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Client:</strong><br>
+                                <span th:text="${reservation.client.nom}">RAZAFY</span>
+                                <span th:text="${reservation.client.prenom}">Marie</span><br>
+                                <small class="text-muted">
+                                    <i class="fas fa-phone"></i> 
+                                    <span th:text="${reservation.client.telephone}">032 12 345 67</span>
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Voyage:</strong><br>
+                                <a th:href="@{/voyages/{id}(id=${reservation.voyage.id})}" 
+                                   th:text="${reservation.voyage.codeVoyage}">VOY123</a><br>
+                                <small class="text-muted">
+                                    <span th:text="${reservation.voyage.trajet.villeDepart}">Tana</span> → 
+                                    <span th:text="${reservation.voyage.trajet.villeArrivee}">Tamatave</span>
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Nombre de Places:</strong><br>
+                                <span class="badge bg-info fs-5" th:text="${reservation.nombrePlaces}">2</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Mode de Réservation:</strong><br>
+                                <span th:text="${reservation.modeReservation}">SUR_PLACE</span>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <strong>Montant Total:</strong><br>
+                                <span class="fs-4">
+                                    <span th:text="${#numbers.formatDecimal(reservation.montantTotal, 0, 'COMMA', 0, 'POINT')}">100000</span> Ar
+                                </span>
+                            </div>
+                            <div class="col-md-4 text-success">
+                                <strong>Montant Payé:</strong><br>
+                                <span class="fs-4">
+                                    <span th:text="${#numbers.formatDecimal(reservation.montantPaye, 0, 'COMMA', 0, 'POINT')}">50000</span> Ar
+                                </span>
+                            </div>
+                            <div class="col-md-4 text-danger">
+                                <strong>Montant Restant:</strong><br>
+                                <span class="fs-4">
+                                    <span th:text="${#numbers.formatDecimal(reservation.montantRestant, 0, 'COMMA', 0, 'POINT')}">50000</span> Ar
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="progress mb-3" style="height: 30px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 th:style="'width: ' + ${(reservation.montantPaye / reservation.montantTotal) * 100} + '%'"
+                                 th:text="${#numbers.formatDecimal((reservation.montantPaye / reservation.montantTotal) * 100, 0, 2)} + '%'">
+                                50%
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col">
+                                <strong>Date de Réservation:</strong><br>
+                                <span th:text="${#temporals.format(reservation.dateReservation, 'dd/MM/yyyy HH:mm')}">
+                                    09/01/2026 14:30
+                                </span>
+                            </div>
+                        </div>
+
+                        <div th:if="${reservation.remarques}" class="mb-3">
+                            <strong>Remarques:</strong><br>
+                            <p th:text="${reservation.remarques}">Aucune remarque</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="card mt-3" th:if="${reservation.statut != 'ANNULE'}">
+                    <div class="card-header">Actions</div>
+                    <div class="card-body">
+                        <div th:if="${reservation.montantRestant > 0}">
+                            <h5>Effectuer un Paiement</h5>
+                            <form th:action="@{/reservations/{id}/paiement(id=${reservation.id})}" method="post">
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Montant (Ar)</label>
+                                        <input type="number" name="montant" class="form-control" 
+                                               th:max="${reservation.montantRestant}" 
+                                               th:value="${reservation.montantRestant}" 
+                                               min="1000" step="1000" required>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Mode de Paiement</label>
+                                        <select name="mode" class="form-select" required>
+                                            <option value="ESPECE">Espèce</option>
+                                            <option value="MOBILE_MONEY">Mobile Money</option>
+                                            <option value="CARTE">Carte Bancaire</option>
+                                            <option value="VIREMENT">Virement</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">&nbsp;</label>
+                                        <button type="submit" class="btn btn-success btn-custom w-100">
+                                            <i class="fas fa-money-bill-wave"></i> Enregistrer
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <hr th:if="${reservation.montantRestant > 0}">
+
+                        <form th:action="@{/reservations/{id}/annuler(id=${reservation.id})}" 
+                              method="post" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cette réservation ?');">
+                            <button type="submit" class="btn btn-danger btn-custom">
+                                <i class="fas fa-times-circle"></i> Annuler la Réservation
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">Informations Voyage</div>
+                    <div class="card-body">
+                        <p><strong>Départ:</strong><br>
+                        <span th:text="${#temporals.format(reservation.voyage.dateDepart, 'dd/MM/yyyy HH:mm')}">
+                            10/01/2026 08:00
+                        </span></p>
+                        
+                        <p><strong>Véhicule:</strong><br>
+                        <span th:text="${reservation.voyage.vehicule.immatriculation}">1234 TAA</span> - 
+                        <span th:text="${reservation.voyage.vehicule.typeVehicule.nom}">Sprinter</span></p>
+                        
+                        <p><strong>Chauffeur:</strong><br>
+                        <span th:text="${reservation.voyage.chauffeur.nom}">RAKOTO</span>
+                        <span th:text="${reservation.voyage.chauffeur.prenom}">Jean</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div th:replace="~{fragments/common :: footer}"></div>
+    <div th:replace="~{fragments/common :: scripts}"></div>
+</body>
+</html>
