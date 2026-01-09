@@ -51,4 +51,6 @@ public class FinanceController {
         redirectAttrs.addFlashAttribute("success", "Dépense enregistrée");
         return "redirect:/finances/depenses";
     }
+
+    
 }
