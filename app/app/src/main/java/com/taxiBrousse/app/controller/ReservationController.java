@@ -31,22 +31,33 @@ public class ReservationController {
     }
     
     @GetMapping("/nouvelle")
-    public String nouvelleForm(@RequestParam(required = false) Long voyageId, Model model) {
+    public String nouvelleForm(@RequestParam(required = false) String villeDepart,
+                               @RequestParam(required = false) String villeArrivee,
+                               @RequestParam(required = false) String date,
+                               @RequestParam(required = false) String heure,
+                               Model model) {
         Reservation reservation = new Reservation();
-        if (voyageId != null) {
-            Voyage voyage = voyageRepo.findById(voyageId).orElse(null);
-            reservation.setVoyage(voyage);
-        }
-        
         model.addAttribute("reservation", reservation);
-        model.addAttribute("voyages", voyageRepo.findVoyagesDisponibles());
         model.addAttribute("clients", personneRepo.findByTypePersonneAndActifTrue("CLIENT"));
+        model.addAttribute("villes", Arrays.asList("Fianarantsoa", "Ambolomadinika Toamasina"));
+        model.addAttribute("datePrefill", date);
+        model.addAttribute("heurePrefill", heure);
+        model.addAttribute("villeDepartPrefill", villeDepart);
+        model.addAttribute("villeArriveePrefill", villeArrivee);
         return "reservations/form";
     }
     
     @PostMapping("/creer")
-    public String creer(@ModelAttribute Reservation reservation, RedirectAttributes redirectAttrs) {
-        Reservation created = reservationService.creerReservation(reservation);
+    public String creer(@RequestParam Long clientId,
+                        @RequestParam String villeDepart,
+                        @RequestParam String villeArrivee,
+                        @RequestParam String date,
+                        @RequestParam String heure,
+                        @RequestParam int nombrePlaces,
+                        RedirectAttributes redirectAttrs) {
+        java.time.LocalDate d = java.time.LocalDate.parse(date);
+        int h = Integer.parseInt(heure.split(":")[0]);
+        Reservation created = reservationService.reserverPlaces(clientId, villeDepart, villeArrivee, d, h, nombrePlaces);
         redirectAttrs.addFlashAttribute("success", "Réservation créée : " + created.getCodeReservation());
         return "redirect:/reservations/" + created.getId();
     }

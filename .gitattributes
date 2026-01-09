@@ -1,0 +1,48 @@
+# Auto detect line endings and normalize to LF for cross-platform compatibility
+* text=auto
+
+# Java
+*.java text eol=lf
+*.class binary
+*.jar binary
+
+# Maven/Build
+*.xml text eol=lf
+*.properties text eol=lf
+*.gradle text eol=lf
+pom.xml merge=union
+
+# SQL
+*.sql text eol=lf
+
+# HTML/Templates
+*.html text eol=lf
+*.htm text eol=lf
+
+# CSS/JS
+*.css text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+
+# Documentation
+*.md text eol=lf
+*.txt text eol=lf
+README text eol=lf
+
+# Images
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+
+# Archives
+*.zip binary
+*.tar binary
+*.gz binary
+*.rar binary
+
+# Compiled files
+target/ export-ignore
+.idea/ export-ignore
+*.class binary

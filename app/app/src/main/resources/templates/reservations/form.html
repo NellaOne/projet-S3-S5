@@ -12,70 +12,43 @@
                         <i class="fas fa-plus-circle"></i> Créer une Nouvelle Réservation
                     </div>
                     <div class="card-body">
-                        <form th:action="@{/reservations/creer}" th:object="${reservation}" method="post">
+                        <form th:action="@{/reservations/creer}" method="post">
                             <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Voyage</label>
-                                    <select th:field="*{voyage.id}" class="form-select" required>
-                                        <option value="">-- Sélectionner --</option>
-                                        <option th:each="v : ${voyages}" 
-                                                th:value="${v.id}"
-                                                th:text="${v.codeVoyage} + ' - ' + ${v.trajet.villeDepart} + ' → ' + ${v.trajet.villeArrivee} + ' (' + ${v.nombrePlacesDisponibles} + ' places dispo)'">
-                                            VOY123 - Tana → Tamatave (5 places dispo)
-                                        </option>
-                                    </select>
-                                </div>
-                                
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Client</label>
-                                    <select th:field="*{client.id}" class="form-select" required>
+                                    <select name="clientId" class="form-select" required>
                                         <option value="">-- Sélectionner --</option>
-                                        <option th:each="c : ${clients}" 
-                                                th:value="${c.id}"
-                                                th:text="${c.nom} + ' ' + ${c.prenom}">
-                                            RAZAFY Marie
-                                        </option>
+                                        <option th:each="c : ${clients}" th:value="${c.id}" th:text="${c.nom} + ' ' + ${c.prenom}"></option>
                                     </select>
                                 </div>
-                            </div>
-                            
-                            <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Nombre de Places</label>
-                                    <input type="number" th:field="*{nombrePlaces}" 
-                                           class="form-control" min="1" value="1" required>
+                                    <input type="number" name="nombrePlaces" class="form-control" min="1" value="1" required>
                                 </div>
-                                
+                            </div>
+                            <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Mode de Réservation</label>
-                                    <select th:field="*{modeReservation}" class="form-select">
-                                        <option value="SUR_PLACE">Sur Place</option>
-                                        <option value="TELEPHONE">Téléphone</option>
-                                        <option value="EN_LIGNE">En Ligne</option>
+                                    <label class="form-label">Départ</label>
+                                    <select name="villeDepart" class="form-select" required>
+                                        <option th:each="v : ${villes}" th:value="${v}" th:text="${v}" th:selected="${villeDepartPrefill == v}"></option>
                                     </select>
                                 </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Arrivée</label>
+                                    <select name="villeArrivee" class="form-select" required>
+                                        <option th:each="v : ${villes}" th:value="${v}" th:text="${v}" th:selected="${villeArriveePrefill == v}"></option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Date</label>
+                                    <input type="date" name="date" class="form-control" th:value="${datePrefill}" required>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Heure</label>
+                                    <input type="time" name="heure" class="form-control" th:value="${heurePrefill}" required>
+                                </div>
                             </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">Montant Payé Maintenant (Ar)</label>
-                                <input type="number" th:field="*{montantPaye}" 
-                                       class="form-control" min="0" step="1000" value="0">
-                                <small class="text-muted">Laissez 0 pour payer plus tard</small>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">Remarques</label>
-                                <textarea th:field="*{remarques}" class="form-control" rows="3"></textarea>
-                            </div>
-                            
-                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                <a href="/reservations" class="btn btn-secondary btn-custom">
-                                    <i class="fas fa-times"></i> Annuler
-                                </a>
-                                <button type="submit" class="btn btn-success btn-custom">
-                                    <i class="fas fa-check"></i> Créer la Réservation
-                                </button>
-                            </div>
+                            <button type="submit" class="btn btn-primary">Réserver</button>
                         </form>
                     </div>
                 </div>

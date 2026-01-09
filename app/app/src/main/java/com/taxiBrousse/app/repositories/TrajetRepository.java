@@ -13,4 +13,6 @@ import java.util.List;
 public interface TrajetRepository extends JpaRepository<Trajet, Long> {
     List<Trajet> findByActifTrue();
     Trajet findByCode(String code);
+
+    Trajet findByVilleDepartAndVilleArrivee(String villeDepart, String villeArrivee);
 }
