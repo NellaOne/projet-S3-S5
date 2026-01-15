@@ -359,3 +359,5 @@ UPDATE vehicule SET nombre_places_premium = 1, nombre_places_standard = 3 WHERE 
 
 -- 4x4 Safari 5 places : 2 premium + 3 standard
 UPDATE vehicule SET nombre_places_premium = 2, nombre_places_standard = 3 WHERE id_vehicule = 9;
+
+
