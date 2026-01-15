@@ -23,12 +23,12 @@ public interface VoyageRepository extends JpaRepository<Voyage, Long> {
      * Récupère les dates où il y a des voyages disponibles pour un trajet
      * (pour la 2ème liste déroulante)
      */
-    @Query("SELECT DISTINCT CAST(v.dateDepart AS date) as date FROM Voyage v " +
-           "WHERE v.trajet.id = :trajetId " +
+    @Query(value = "SELECT DISTINCT CAST(v.date_depart AS DATE)::text " +
+           "FROM voyage v " +
+           "WHERE v.trajet_id = :trajetId " +
            "AND v.statut = 'PLANIFIE' " +
-           "AND v.dateDepart > CURRENT_TIMESTAMP " +
-           "ORDER BY CAST(v.dateDepart AS date)")
-    List<LocalDate> findDatesDisponiblesParTrajet(
+           "AND v.date_depart > CURRENT_TIMESTAMP", nativeQuery = true)
+    List<String> findDatesDisponiblesParTrajet(
         @org.springframework.data.repository.query.Param("trajetId") Long trajetId
     );
     

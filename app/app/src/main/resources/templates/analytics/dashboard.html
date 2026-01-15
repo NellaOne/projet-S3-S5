@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/common :: head('Analytics - Voyages')}"></head>
+<body>
+    <div th:replace="~{fragments/common :: navbar}"></div>
+    
+    <div class="container-fluid px-4">
+        <div class="row mb-4">
+            <div class="col">
+                <h2><i class="fas fa-chart-bar"></i> Analytics - Voyages (Table Pivot)</h2>
+                <p class="text-muted">Filtrez les voyages par circuit, chiffre d'affaire et visualisez les métriques</p>
+            </div>
+            <div class="col text-end">
+                <a href="/" class="btn btn-secondary">
+                    <i class="fas fa-home"></i> Accueil
+                </a>
+            </div>
+        </div>
+
+        <!-- 🎯 CARTE DES STATISTIQUES GLOBALES -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <h6 class="card-title">Total CA Réalisé</h6>
+                        <h4 th:text="${#numbers.formatDecimal(totalCA, 0, 'COMMA', 0, 'POINT')}">0</h4>
+                        <small>Ar</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <h6 class="card-title">Voyages</h6>
+                        <h4 th:text="${totalVoyages}">0</h4>
+                        <small>Nombre total</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <h6 class="card-title">Réservations</h6>
+                        <h4 th:text="${totalReservations}">0</h4>
+                        <small>Places vendues</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark">
+                    <div class="card-body">
+                        <h6 class="card-title">CA Moyen/Voyage</h6>
+                        <h4 th:text="${totalVoyages > 0 ? #numbers.formatDecimal(totalCA / totalVoyages, 0, 'COMMA', 0, 'POINT') : '0'}">0</h4>
+                        <small>Ar</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🔍 FILTRES -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-filter"></i> Filtres Avancés</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" action="/analytics" class="row g-3">
+                    <!-- Filtre Circuit -->
+                    <div class="col-md-4">
+                        <label class="form-label">Circuit (Trajet)</label>
+                        <select name="trajetId" class="form-select">
+                            <option value="">-- Tous les circuits --</option>
+                            <option th:each="trajet : ${trajets}" 
+                                    th:value="${trajet.id}"
+                                    th:text="${trajet.villeDepart} + ' → ' + ${trajet.villeArrivee}"
+                                    th:selected="${trajet.id == selectedTrajetId}">
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Filtre CA Min -->
+                    <div class="col-md-3">
+                        <label class="form-label">CA Minimum (Ar)</label>
+                        <input type="number" name="caMin" class="form-control" 
+                               th:value="${caMin != null ? caMin : ''}" 
+                               placeholder="0"
+                               min="0" step="1000">
+                    </div>
+
+                    <!-- Filtre CA Max -->
+                    <div class="col-md-3">
+                        <label class="form-label">CA Maximum (Ar)</label>
+                        <input type="number" name="caMax" class="form-control" 
+                               th:value="${caMax != null ? caMax : ''}" 
+                               placeholder="999999999"
+                               min="0" step="1000">
+                    </div>
+
+                    <!-- Boutons -->
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="btn-group w-100" role="group">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Filtrer
+                            </button>
+                            <a href="/analytics" class="btn btn-secondary">
+                                <i class="fas fa-redo"></i> Réinitialiser
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 📊 TABLEAU ANALYTICS -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-table"></i> Voyages - Toutes les Colonnes Pivot</h5>
+                <small class="text-muted">Affichage: <span th:text="${voyages.size()}">0</span> / <span th:text="${totalVoyages}">0</span> voyages</small>
+            </div>
+            <div class="card-body table-responsive">
+                <table class="table table-hover table-sm align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <!-- COLONNES VOYAGE -->
+                            <th>Code</th>
+                            <th>Départ</th>
+                            <th>Statut</th>
+                            
+                            <!-- COLONNES CIRCUIT/TRAJET -->
+                            <th>Circuit</th>
+                            <th>Distance</th>
+                            
+                            <!-- COLONNES VÉHICULE -->
+                            <th>Véhicule</th>
+                            <th>Places</th>
+                            
+                            <!-- COLONNES CHAUFFEUR -->
+                            <th>Chauffeur</th>
+                            
+                            <!-- COLONNES TARIFICATION -->
+                            <th>Prix/Place</th>
+                            
+                            <!-- COLONNES ANALYTIQUES -->
+                            <th class="text-end">CA Réalisé</th>
+                            <th class="text-end">Réservations</th>
+                            <th class="text-end">Places Vendues</th>
+                            <th class="text-end">Taux Occupation</th>
+                            <th class="text-end">CA/Place</th>
+                            
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="voyage : ${voyages}">
+                            <!-- COLONNES VOYAGE -->
+                            <td>
+                                <a th:href="@{/voyages/{id}(id=${voyage.id})}" 
+                                   th:text="${voyage.codeVoyage}"
+                                   class="text-decoration-none">VOY123</a>
+                            </td>
+                            <td th:text="${#temporals.format(voyage.dateDepart, 'dd/MM HH:mm')}">01/01 08:00</td>
+                            <td>
+                                <span th:if="${voyage.statut == 'PLANIFIE'}" class="badge bg-info">Planifié</span>
+                                <span th:if="${voyage.statut == 'EN_COURS'}" class="badge bg-warning">En cours</span>
+                                <span th:if="${voyage.statut == 'TERMINE'}" class="badge bg-success">Terminé</span>
+                                <span th:if="${voyage.statut == 'ANNULE'}" class="badge bg-danger">Annulé</span>
+                            </td>
+                            
+                            <!-- COLONNES TRAJET -->
+                            <td>
+                                <small>
+                                    <span th:text="${voyage.villeDepart}">Tana</span><br>
+                                    → <span th:text="${voyage.villeArrivee}">Tamatave</span>
+                                </small>
+                            </td>
+                            <td th:text="${voyage.distanceKm} + ' km'">250 km</td>
+                            
+                            <!-- COLONNES VÉHICULE -->
+                            <td th:text="${voyage.immatriculation}">1234 TAA</td>
+                            <td th:text="${voyage.nombrePlaces}">14</td>
+                            
+                            <!-- COLONNES CHAUFFEUR -->
+                            <td th:text="${voyage.chauffeurComplet}">Jean RAKOTO</td>
+                            
+                            <!-- COLONNES TARIFICATION -->
+                            <td class="text-end" th:text="${#numbers.formatDecimal(voyage.prixParPlace, 0, 'COMMA', 0, 'POINT')} + ' Ar'">50000 Ar</td>
+                            
+                            <!-- COLONNES ANALYTIQUES -->
+                            <td class="text-end">
+                                <strong class="text-success" th:text="${voyage.getCaFormatted()}">500000 Ar</strong>
+                            </td>
+                            <td class="text-end" th:text="${voyage.nbReservations}">5</td>
+                            <td class="text-end" th:text="${voyage.placesVendues}">8</td>
+                            <td class="text-end">
+                                <span th:text="${voyage.getTauxOccupationFormatted()}">57.1%</span>
+                                <div class="progress mt-1" style="height: 20px;">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         th:style="'width: ' + ${voyage.tauxOccupation} + '%'">
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-end" th:text="${voyage.getCaParPlaceFormatted()}">62500 Ar</td>
+                            
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a th:href="@{/voyages/{id}(id=${voyage.id})}" 
+                                       class="btn btn-info" title="Détails">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a th:href="@{/reservations/voyage/{id}(id=${voyage.id})}" 
+                                       class="btn btn-primary" title="Réservations">
+                                        <i class="fas fa-ticket-alt"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- Message si aucun voyage -->
+                        <tr th:if="${voyages.isEmpty()}">
+                            <td colspan="15" class="text-center py-4">
+                                <i class="fas fa-inbox text-muted"></i>
+                                <p class="text-muted mt-2">Aucun voyage ne correspond aux filtres</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 📄 PAGINATION -->
+        <nav th:if="${totalPages > 1}" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item" th:classappend="${currentPage == 0 ? 'disabled' : ''}">
+                    <a class="page-link" th:href="@{/analytics(page=0, trajetId=${selectedTrajetId}, caMin=${caMin}, caMax=${caMax})}">
+                        <i class="fas fa-angle-double-left"></i>
+                    </a>
+                </li>
+                
+                <li class="page-item" th:classappend="${currentPage == 0 ? 'disabled' : ''}">
+                    <a class="page-link" th:href="@{/analytics(page=${currentPage - 1}, trajetId=${selectedTrajetId}, caMin=${caMin}, caMax=${caMax})}">
+                        <i class="fas fa-angle-left"></i>
+                    </a>
+                </li>
+                
+                <li class="page-item active">
+                    <span class="page-link" th:text="${currentPage + 1} + ' / ' + ${totalPages}">1 / 5</span>
+                </li>
+                
+                <li class="page-item" th:classappend="${currentPage + 1 >= totalPages ? 'disabled' : ''}">
+                    <a class="page-link" th:href="@{/analytics(page=${currentPage + 1}, trajetId=${selectedTrajetId}, caMin=${caMin}, caMax=${caMax})}">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </li>
+                
+                <li class="page-item" th:classappend="${currentPage + 1 >= totalPages ? 'disabled' : ''}">
+                    <a class="page-link" th:href="@{/analytics(page=${totalPages - 1}, trajetId=${selectedTrajetId}, caMin=${caMin}, caMax=${caMax})}">
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    
+    <div th:replace="~{fragments/common :: footer}"></div>
+    <div th:replace="~{fragments/common :: scripts}"></div>
+</body>
+</html>

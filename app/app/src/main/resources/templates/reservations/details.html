@@ -123,7 +123,7 @@
                         <div th:if="${reservation.montantRestant > 0}">
                             <h5>Effectuer un Paiement</h5>
                             <form th:action="@{/reservations/{id}/paiement(id=${reservation.id})}" method="post">
-                                <input type="hidden" name="moment" value="AVANT">
+                                <input type="hidden" name="moment" value="RESERVATION">
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Montant (Ar)</label>

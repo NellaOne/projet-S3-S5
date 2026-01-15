@@ -37,12 +37,84 @@ public class ReservationService {
     // ============================================
     
     /**
-     * Crée une réservation sur une session/voyage existant
+     * Crée une réservation avec places PREMIUM et STANDARD séparées
      * 
-     * @param voyageId ID du voyage (session) sélectionné
+     * @param voyageId ID du voyage
      * @param clientId ID du client
-     * @param nombrePlaces Nombre de places à réserver
+     * @param nombrePlacesPremium Nombre de places premium
+     * @param nombrePlacesStandard Nombre de places standard
      * @return Réservation créée
+     */
+    public Reservation creerReservation(Long voyageId, Long clientId, Integer nombrePlacesPremium, Integer nombrePlacesStandard) {
+        // 1. Récupérer le voyage
+        Voyage voyage = voyageRepository.findById(voyageId)
+            .orElseThrow(() -> new RuntimeException("Voyage non trouvé"));
+        
+        // 2. Récupérer le client
+        Personne client = personneRepository.findById(clientId)
+            .orElseThrow(() -> new RuntimeException("Client non trouvé"));
+        
+        // 3. Vérifier disponibilité Premium EN TEMPS RÉEL
+        List<Reservation> reservationsActuelles = reservationRepository
+            .findByVoyageIdAndStatutNot(voyageId, "ANNULE");
+        
+        int placesPremiumsReservees = reservationsActuelles.stream()
+            .mapToInt(Reservation::getNombrePlacesPremium)
+            .sum();
+        
+        int placesStandardReservees = reservationsActuelles.stream()
+            .mapToInt(Reservation::getNombrePlacesStandard)
+            .sum();
+        
+        int capacitePremiume = voyage.getVehicule().getNombrePlacesPremium();
+        int capaciteStandard = voyage.getVehicule().getNombrePlacesStandard();
+        
+        int placesPremiumsDisponibles = capacitePremiume - placesPremiumsReservees;
+        int placesStandardDisponibles = capaciteStandard - placesStandardReservees;
+        
+        if (nombrePlacesPremium > placesPremiumsDisponibles) {
+            throw new RuntimeException(
+                String.format("Pas assez de places premium. Disponibles: %d, Demandées: %d", 
+                    placesPremiumsDisponibles, nombrePlacesPremium)
+            );
+        }
+        
+        if (nombrePlacesStandard > placesStandardDisponibles) {
+            throw new RuntimeException(
+                String.format("Pas assez de places standard. Disponibles: %d, Demandées: %d", 
+                    placesStandardDisponibles, nombrePlacesStandard)
+            );
+        }
+        
+        // 4. Créer la réservation
+        Reservation reservation = new Reservation();
+        reservation.setCodeReservation("RES-" + System.currentTimeMillis());
+        reservation.setVoyage(voyage);
+        reservation.setClient(client);
+        reservation.setNombrePlacesPremium(nombrePlacesPremium);
+        reservation.setNombrePlacesStandard(nombrePlacesStandard);
+        reservation.setStatut("EN_ATTENTE");
+        reservation.setDateReservation(LocalDateTime.now());
+        
+        // 5. Calculer montants (PREMIUM + STANDARD séparément)
+        Tarif tarif = trajetRepository.findTarifByTrajetId(voyage.getTrajet().getId());
+        if (tarif == null) {
+            throw new RuntimeException("Tarif non trouvé pour ce trajet");
+        }
+        
+        BigDecimal montantPremium = tarif.getPrixPlacePremium().multiply(BigDecimal.valueOf(nombrePlacesPremium));
+        BigDecimal montantStandard = tarif.getPrixPlaceStandard().multiply(BigDecimal.valueOf(nombrePlacesStandard));
+        
+        reservation.setMontantTotalPremium(montantPremium);
+        reservation.setMontantTotalStandard(montantStandard);
+        reservation.setMontantPaye(BigDecimal.ZERO);
+        
+        // 6. Sauvegarder
+        return reservationRepository.save(reservation);
+    }
+    
+    /**
+     * Crée une réservation (ancien flux - compatibilité arrière)
      */
     public Reservation creerReservation(Long voyageId, Long clientId, Integer nombrePlaces) {
         // 1. Récupérer le voyage (session)

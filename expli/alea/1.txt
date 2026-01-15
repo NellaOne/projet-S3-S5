@@ -1,2 +1,0 @@
-.²filtrer tres precis par chiffres d'affaire, par circuit, 
-tous les colonnes dans la table de pivot

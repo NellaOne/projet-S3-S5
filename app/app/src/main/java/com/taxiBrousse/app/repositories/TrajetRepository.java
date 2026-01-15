@@ -15,4 +15,7 @@ public interface TrajetRepository extends JpaRepository<Trajet, Long> {
     Trajet findByCode(String code);
 
     Trajet findByVilleDepartAndVilleArrivee(String villeDepart, String villeArrivee);
+    
+    @Query("SELECT t FROM Tarif t WHERE t.trajet.id = :trajetId AND t.actif = true")
+    Tarif findTarifByTrajetId(Long trajetId);
 }

@@ -28,27 +28,26 @@ VALUES
     ('Garage Toliara Entretien', 'Route du port, Toliara', '+261 20 94 345 678', 'garage.tolia@taxi.mg', 'Carrosserie', TRUE);
 
 
-INSERT INTO vehicule (immatriculation, type_vehicule_id, garage_id, marque, modele, annee, couleur, numero_chassis, nombre_places, statut, kilometrage_actuel, date_derniere_visite_technique, date_prochaine_visite_technique, actif)
+INSERT INTO vehicule (immatriculation, type_vehicule_id, garage_id, marque, modele, annee, couleur, numero_chassis, nombre_places, statut, kilometrage_actuel, date_acquisition, date_derniere_visite_technique, date_prochaine_visite_technique, actif)
 VALUES 
     -- Bus 30 places
-    ('501-MG-ANT', 1, 1, 'Mercedes', 'Sprinter 513CDI', 2015, 'Blanc', 'WDB90X194F7123456', 30, 'DISPONIBLE', 125000.50, '2025-10-15', '2026-10-15', TRUE),
-    ('502-MG-ANT', 1, 1, 'Hyundai', 'County 34', 2018, 'Bleu', 'KMHEC4A46JU123457', 30, 'DISPONIBLE', 89000.00, '2025-11-20', '2026-11-20', TRUE),
+    ('501-MG-ANT', 1, 1, 'Mercedes', 'Sprinter 513CDI', 2015, 'Blanc', 'WDB90X194F7123456', 30, 'DISPONIBLE', 125000.50, '2015-06-01', '2025-10-15', '2026-10-15', TRUE),
+    ('502-MG-ANT', 1, 1, 'Hyundai', 'County 34', 2018, 'Bleu', 'KMHEC4A46JU123457', 30, 'DISPONIBLE', 89000.00, '2018-03-15', '2025-11-20', '2026-11-20', TRUE),
     
     -- Van 15 places
-    ('701-MG-ANTSI', 2, 2, 'Toyota', 'Hiace', 2017, 'Gris', '4T1RF1FA5H1123458', 15, 'EN_SERVICE', 95500.75, '2025-09-10', '2026-09-10', TRUE),
-    ('702-MG-ANTSI', 2, 2, 'Ford', 'Transit', 2016, 'Blanc', 'WF0XXXWPFG1123459', 15, 'DISPONIBLE', 102000.00, '2025-08-05', '2026-08-05', TRUE),
+    ('701-MG-ANTSI', 2, 2, 'Toyota', 'Hiace', 2017, 'Gris', '4T1RF1FA5H1123458', 15, 'EN_SERVICE', 95500.75, '2017-05-20', '2025-09-10', '2026-09-10', TRUE),
+    ('702-MG-ANTSI', 2, 2, 'Ford', 'Transit', 2016, 'Blanc', 'WF0XXXWPFG1123459', 15, 'DISPONIBLE', 102000.00, '2016-08-10', '2025-08-05', '2026-08-05', TRUE),
     
     -- Minibus 7 places
-    ('801-MG-FIANA', 3, 3, 'Peugeot', 'Boxer', 2019, 'Orange', 'VF3BJFNXS00123460', 7, 'DISPONIBLE', 45000.25, '2025-12-01', '2026-12-01', TRUE),
-    ('802-MG-FIANA', 3, 3, 'Renault', 'Master', 2018, 'Jaune', 'VF1FG000161123461', 7, 'EN_MAINTENANCE', 52100.00, '2025-07-15', '2026-07-15', TRUE),
+    ('801-MG-FIANA', 3, 3, 'Peugeot', 'Boxer', 2019, 'Orange', 'VF3BJFNXS00123460', 7, 'DISPONIBLE', 45000.25, '2019-09-01', '2025-12-01', '2026-12-01', TRUE),
+    ('802-MG-FIANA', 3, 3, 'Renault', 'Master', 2018, 'Jaune', 'VF1FG000161123461', 7, 'EN_MAINTENANCE', 52100.00, '2018-11-20', '2025-07-15', '2026-07-15', TRUE),
     
     -- Taxi 4 places
-    ('901-MG-TOLIA', 4, 4, 'Peugeot', '301', 2020, 'Blanc', 'VF3CCFFD251123462', 4, 'DISPONIBLE', 28000.50, '2025-11-01', '2026-11-01', TRUE),
-    ('902-MG-TOLIA', 4, 4, 'Hyundai', 'i10', 2021, 'Gris', 'KMHEC5A46JU123463', 4, 'DISPONIBLE', 18500.00, '2025-12-10', '2026-12-10', TRUE),
+    ('901-MG-TOLIA', 4, 4, 'Peugeot', '301', 2020, 'Blanc', 'VF3CCFFD251123462', 4, 'DISPONIBLE', 28000.50, '2020-07-12', '2025-11-01', '2026-11-01', TRUE),
+    ('902-MG-TOLIA', 4, 4, 'Hyundai', 'i10', 2021, 'Gris', 'KMHEC5A46JU123463', 4, 'DISPONIBLE', 18500.00, '2021-02-28', '2025-12-10', '2026-12-10', TRUE),
     
     -- 4x4 Safari
-    ('1001-MG-ANT', 5, 1, 'Toyota', 'Land Cruiser', 2014, 'Noir', 'JTMHY4F34E5123464', 5, 'DISPONIBLE', 180000.00, '2025-06-20', '2026-06-20', TRUE);
-
+    ('1001-MG-ANT', 5, 1, 'Toyota', 'Land Cruiser', 2014, 'Noir', 'JTMHY4F34E5123464', 5, 'DISPONIBLE', 180000.00, '2014-04-10', '2025-06-20', '2026-06-20', TRUE);
 
 -- Chauffeurs
 INSERT INTO personne (type_personne, nom, prenom, cin, date_naissance, telephone, email, adresse, permis_numero, permis_categorie, permis_date_expiration, statut, actif)

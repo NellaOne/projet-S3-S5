@@ -1,0 +1,12 @@
+Une voiture possède des places premium 
+et des places standard
+Pour un voyage Tana - Toamasina - 
+: Une place premium une place coûte 140 
+000Ar et une place standard 
+coûte 80 000Ar
+
+Donner la valeur maximale qu'une 
+voiture peut générer pour un 
+voyage Tana - Toamasina
+
+pour un vehicule pour un trajet pour une heure => combien maximum qu'on obtient ?

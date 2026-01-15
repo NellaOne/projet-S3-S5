@@ -3,6 +3,9 @@ package com.taxiBrousse.app.model;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.Generated;
+import org.hibernate.annotations.GenerationTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -33,14 +36,29 @@ public class Reservation {
     @JoinColumn(name = "client_id")
     private Personne client;
     
-    @Column(nullable = false)
-    private Integer nombrePlaces = 1;
+    @Column(name = "nombre_places_premium", nullable = false)
+    private Integer nombrePlacesPremium = 0;
     
-    @Column(nullable = false)
+    @Column(name = "nombre_places_standard", nullable = false)
+    private Integer nombrePlacesStandard = 0;
+    
+    @Column(name = "nombre_places", columnDefinition = "BIGINT GENERATED ALWAYS AS (nombre_places_premium + nombre_places_standard) STORED")
+    private Integer nombrePlaces;
+    
+    @Column(name = "montant_total_premium", nullable = false)
+    private BigDecimal montantTotalPremium = BigDecimal.ZERO;
+    
+    @Column(name = "montant_total_standard", nullable = false)
+    private BigDecimal montantTotalStandard = BigDecimal.ZERO;
+    
+    @Generated(GenerationTime.ALWAYS)
+    @Column(name = "montant_total", insertable = false, updatable = false)
     private BigDecimal montantTotal;
     
     private BigDecimal montantPaye = BigDecimal.ZERO;
-    private BigDecimal montantRestant;
+    
+    @Generated(GenerationTime.ALWAYS)
+    @Column(name = "montant_restant", insertable = false, updatable = false)
     
     @Column(length = 50)
     private String modeReservation = "SUR_PLACE"; // SUR_PLACE, TELEPHONE, EN_LIGNE

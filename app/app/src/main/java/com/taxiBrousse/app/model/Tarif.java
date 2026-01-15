@@ -31,8 +31,11 @@ public class Tarif {
     @JoinColumn(name = "type_vehicule_id")
     private TypeVehicule typeVehicule;
     
-    @Column(nullable = false)
-    private BigDecimal prixBase;
+    @Column(name = "prix_place_standard", nullable = false)
+    private BigDecimal prixPlaceStandard;
+    
+    @Column(name = "prix_place_premium", nullable = false)
+    private BigDecimal prixPlacePremium;
     
     @Column(length = 50)
     private String typeTarif = "NORMAL"; // NORMAL, FETE, WEEKEND, NUIT

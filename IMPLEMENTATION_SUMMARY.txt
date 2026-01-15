@@ -1,0 +1,155 @@
+== IMPLEMENTATION PREMIUM/STANDARD PLACES SYSTEM ==
+
+SCHEMA CHANGES (table.sql) ✅:
+=============================
+1. vehicule table:
+   - ADDED: nombre_places_premium (DEFAULT 0)
+   - ADDED: nombre_places_standard (DEFAULT 0)  
+   - MODIFIED: nombre_places (now GENERATED AS premium + standard)
+
+2. tarif table:
+   - REMOVED: prix_base
+   - ADDED: prix_place_standard
+   - ADDED: prix_place_premium
+
+3. reservation table:
+   - ADDED: nombre_places_premium (DEFAULT 0)
+   - ADDED: nombre_places_standard (DEFAULT 0)
+   - MODIFIED: nombre_places (now GENERATED AS premium + standard)
+   - ADDED: montant_total_premium
+   - ADDED: montant_total_standard
+   - MODIFIED: montant_total (now GENERATED AS premium_amount + standard_amount)
+   - MODIFIED: montant_restant (calculated from updated montant_total)
+
+4. Functions Created:
+   - fn_calculer_montant_reservation(voyage_id, premium_count, standard_count)
+     Returns total amount (premium × prix_premium) + (standard × prix_standard)
+   
+   - fn_ca_max_voyage(voyage_id)
+     Calculates max possible revenue for one trip
+     = (vehicle_premium_places × tarif_premium) + (vehicle_standard_places × tarif_standard)
+
+5. v_voyage_analytics View Updated:
+   - ADDED: nombre_places_premium, nombre_places_standard (from vehicule)
+   - ADDED: ca_premium, ca_standard (breakdown by type)
+   - ADDED: places_premium_vendues, places_standard_vendues
+   - ADDED: ca_max_possible (via fn_ca_max_voyage)
+
+JAVA ENTITY CHANGES:
+====================
+1. Vehicule.java ✅
+   - nombrePlacesPremium: Integer @Column(name="nombre_places_premium")
+   - nombrePlacesStandard: Integer @Column(name="nombre_places_standard")
+   - nombrePlaces: Integer @Column(GENERATED)
+
+2. Tarif.java ✅
+   - REMOVED: prixBase
+   - prixPlaceStandard: BigDecimal @Column(name="prix_place_standard")
+   - prixPlacePremium: BigDecimal @Column(name="prix_place_premium")
+
+3. Reservation.java ✅
+   - nombrePlacesPremium: Integer @Column(name="nombre_places_premium")
+   - nombrePlacesStandard: Integer @Column(name="nombre_places_standard")
+   - nombrePlaces: Integer @Column(GENERATED)
+   - montantTotalPremium: BigDecimal @Column(name="montant_total_premium")
+   - montantTotalStandard: BigDecimal @Column(name="montant_total_standard")
+   - montantTotal: BigDecimal @Column(GENERATED, name="montant_total")
+
+4. VoyageAnalyticsDTO.java ✅
+   - ADDED: nombrePlacesPremium, nombrePlacesStandard
+   - ADDED: caPremium, caStandard (breakdown)
+   - ADDED: placesPremiumVendues, placesStandardVendues
+   - ADDED: caMaxPossible
+   - Updated constructor with all new fields
+
+SERVICE LAYER CHANGES:
+======================
+1. ReservationService.java ✅
+   NEW METHOD: creerReservation(voyageId, clientId, nombrePlacesPremium, nombrePlacesStandard)
+   - Validates both premium AND standard places separately
+   - Calculates montant_total_premium & montant_total_standard
+   - OLD METHOD retained for backward compatibility
+
+2. VoyageService.java ✅
+   NEW METHOD: calculerMontantsReservation(voyageId, premium, standard) → Map<String, BigDecimal>
+   - Returns {montantPremium, montantStandard, montantTotal}
+   - OLD METHOD retained for backward compatibility
+
+3. TrajetRepository.java ✅
+   NEW METHOD: findTarifByTrajetId(trajetId) → Tarif
+   - Required for price lookups in services
+
+CONTROLLER CHANGES:
+===================
+1. ReservationController.java ✅
+   UPDATED POST /reservations/creer
+   - Now accepts BOTH (numberOfPlaces) AND (numberOfPlacesPremium, numberOfPlacesStandard)
+   - Routes to appropriate service method based on parameters provided
+   
+   NEW API ENDPOINT: POST /reservations/api/calculer-montants
+   - @RequestParam voyageId, nombrePlacesPremium, nombrePlacesStandard
+   - Returns Map<String, BigDecimal> with pricing breakdown
+
+DTO CHANGES:
+============
+1. VoyageAnalyticsDTO.java ✅
+   - Updated to include all premium/standard fields
+   - Constructor signature changed (25 parameters → 26)
+
+MIGRATION REQUIRED:
+===================
+1. DATABASE RESET:
+   - Execute: table.sql (complete schema with new columns)
+   - Execute: data.sql (initial data)
+   - Execute: data_premium_standard.sql (update tarifs and vehicles with dual pricing)
+
+2. EXISTING DATA:
+   - All reservations will need nombre_places_premium and nombre_places_standard
+   - Vehicles must have place distribution defined
+   - Tarifs must have both prix_place_standard and prix_place_premium set
+
+3. BACKWARD COMPATIBILITY:
+   - Old parameter "nombrePlaces" still accepted in controllers
+   - Old "prixBase" replaced with dual pricing
+   - Old queries using "nombre_places" will work (computed column)
+
+TESTING CHECKLIST:
+==================
+□ Database migration: table.sql + data.sql + data_premium_standard.sql
+□ Compile: mvn clean compile (should have 0 errors)
+□ Start app: mvn spring-boot:run
+□ Create reservation with mixed places (2 premium, 3 standard)
+□ Verify montant_total = (2 × prix_premium) + (3 × prix_standard)
+□ Check analytics dashboard shows premium/standard breakdown
+□ Test ca_max_voyage() calculation
+□ Verify old endpoint still works (numero_places parameter)
+
+FILES MODIFIED:
+===============
+✅ c:\Users\ORNELLA\Documents\S5\Baovola\090125\projet-S3-S5\Base\table.sql
+✅ c:\Users\ORNELLA\Documents\S5\Baovola\090125\projet-S3-S5\Base\data_premium_standard.sql (NEW)
+✅ c:\Users\ORNELLA\Documents\S5\Baovola\090125\projet-S3-S5\app\app\src\main\java\com\taxiBrousse\app\model\Vehicule.java
+✅ c:\Users\ORNELLA\Documents\S5\Baovola\090125\projet-S3-S5\app\app\src\main\java\com\taxiBrousse\app\model\Tarif.java
+✅ c:\Users\ORNELLA\Documents\S5\Baovola\090125\projet-S3-S5\app\app\src\main\java\com\taxiBrousse\app\model\Reservation.java
+✅ c:\Users\ORNELLA\Documents\S5\Baovola\090125\projet-S3-S5\app\app\src\main\java\com\taxiBrousse\app\service\ReservationService.java
+✅ c:\Users\ORNELLA\Documents\S5\Baovola\090125\projet-S3-S5\app\app\src\main\java\com\taxiBrousse\app\service\VoyageService.java
+✅ c:\Users\ORNELLA\Documents\S5\Baovola\090125\projet-S3-S5\app\app\src\main\java\com\taxiBrousse\app\controller\ReservationController.java
+✅ c:\Users\ORNELLA\Documents\S5\Baovola\090125\projet-S3-S5\app\app\src\main\java\com\taxiBrousse\app\dto\VoyageAnalyticsDTO.java
+✅ c:\Users\ORNELLA\Documents\S5\Baovola\090125\projet-S3-S5\app\app\src\main\java\com\taxiBrousse\app\repositories\TrajetRepository.java
+
+PRICING EXAMPLE (from data_premium_standard.sql):
+==================================================
+Trajet: Tana -> Antsirabe (T001)
+- Standard place: 25,000 Ar
+- Premium place: 40,000 Ar
+
+Vehicle: Bus 30 places (8 premium + 22 standard)
+- Max CA = (8 × 40,000) + (22 × 25,000)
+- Max CA = 320,000 + 550,000 = 870,000 Ar
+
+Reservation: 2 premium + 1 standard
+- Amount = (2 × 40,000) + (1 × 25,000)
+- Amount = 80,000 + 25,000 = 105,000 Ar
+
+STATUS: ✅ IMPLEMENTATION COMPLETE
+All code changes made. Ready for testing and deployment.

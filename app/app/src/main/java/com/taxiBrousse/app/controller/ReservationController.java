@@ -152,11 +152,22 @@ public class ReservationController {
     public String creer(
             @RequestParam Long voyageId,
             @RequestParam Long clientId,
-            @RequestParam Integer nombrePlaces,
+            @RequestParam(required = false) Integer nombrePlacesPremium,
+            @RequestParam(required = false) Integer nombrePlacesStandard,
+            @RequestParam(required = false) Integer nombrePlaces,
             RedirectAttributes redirectAttrs) {
         try {
-            Reservation reservation = reservationService.creerReservation(
-                voyageId, clientId, nombrePlaces);
+            Reservation reservation;
+            
+            // Si places premium/standard fournis, les utiliser
+            if (nombrePlacesPremium != null && nombrePlacesStandard != null) {
+                reservation = reservationService.creerReservation(
+                    voyageId, clientId, nombrePlacesPremium, nombrePlacesStandard);
+            } else {
+                // Sinon utiliser le nombre de places classique (compatibilité)
+                reservation = reservationService.creerReservation(
+                    voyageId, clientId, nombrePlaces != null ? nombrePlaces : 1);
+            }
             
             redirectAttrs.addFlashAttribute("success", 
                 "Réservation créée : " + reservation.getCodeReservation());
@@ -165,6 +176,28 @@ public class ReservationController {
         } catch (Exception e) {
             redirectAttrs.addFlashAttribute("error", "Erreur : " + e.getMessage());
             return "redirect:/reservations/nouvelle";
+        }
+    }
+    
+    /**
+     * POST : Calcule les montants pour les deux types de places
+     */
+    @PostMapping("/api/calculer-montants")
+    @ResponseBody
+    public ResponseEntity<Map<String, BigDecimal>> calculerMontants(
+            @RequestParam Long voyageId,
+            @RequestParam(required = false) Integer nombrePlacesPremium,
+            @RequestParam(required = false) Integer nombrePlacesStandard) {
+        try {
+            if (nombrePlacesPremium == null) nombrePlacesPremium = 0;
+            if (nombrePlacesStandard == null) nombrePlacesStandard = 0;
+            
+            Map<String, BigDecimal> montants = voyageService.calculerMontantsReservation(
+                voyageId, nombrePlacesPremium, nombrePlacesStandard);
+            
+            return ResponseEntity.ok(montants);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
         }
     }
     

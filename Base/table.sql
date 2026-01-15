@@ -95,8 +95,10 @@ CREATE TABLE vehicule (
     couleur VARCHAR(50),
     numero_chassis VARCHAR(50) UNIQUE,
     
-    -- ✅ CAPACITe FIXE (comme capacite d'une salle)
-    nombre_places BIGINT NOT NULL CHECK (nombre_places > 0),
+    -- ✅ PLACES (Premium + Standard)
+    nombre_places_premium BIGINT NOT NULL DEFAULT 0 CHECK (nombre_places_premium >= 0),
+    nombre_places_standard BIGINT NOT NULL DEFAULT 0 CHECK (nombre_places_standard >= 0),
+    nombre_places BIGINT GENERATED ALWAYS AS (nombre_places_premium + nombre_places_standard) STORED,
     
     -- etat du vehicule
     statut VARCHAR(50) DEFAULT 'DISPONIBLE' 
@@ -120,7 +122,9 @@ CREATE TABLE tarif (
     trajet_id BIGINT NOT NULL REFERENCES trajet(id_trajet),
     type_vehicule_id BIGINT REFERENCES type_vehicule(id_type_vehicule),
     
-    prix_base DECIMAL(10,2) NOT NULL CHECK (prix_base > 0),
+    -- ✅ DEUX TARIFS: Standard et Premium
+    prix_place_standard DECIMAL(10,2) NOT NULL CHECK (prix_place_standard > 0),
+    prix_place_premium DECIMAL(10,2) NOT NULL CHECK (prix_place_premium > 0),
     
     type_tarif VARCHAR(50) DEFAULT 'NORMAL' 
         CHECK (type_tarif IN ('NORMAL', 'FETE', 'WEEKEND', 'NUIT', 'PROMOTIONNEL')),
@@ -184,13 +188,18 @@ CREATE TABLE reservation (
     voyage_id BIGINT NOT NULL REFERENCES voyage(id_voyage),
     client_id BIGINT NOT NULL REFERENCES personne(id_personne),
     
-    -- ✅ Details reservation
-    nombre_places BIGINT NOT NULL CHECK (nombre_places > 0),
+    -- ✅ Details reservation (Premium + Standard)
+    nombre_places_premium BIGINT NOT NULL DEFAULT 0 CHECK (nombre_places_premium >= 0),
+    nombre_places_standard BIGINT NOT NULL DEFAULT 0 CHECK (nombre_places_standard >= 0),
+    nombre_places BIGINT GENERATED ALWAYS AS (nombre_places_premium + nombre_places_standard) STORED,
     
-    -- ✅ Tarification
-    montant_total DECIMAL(10,2) NOT NULL CHECK (montant_total >= 0),
+    -- ✅ Tarification (calculee selon les deux types)
+    montant_total_premium DECIMAL(10,2) NOT NULL DEFAULT 0 CHECK (montant_total_premium >= 0),
+    montant_total_standard DECIMAL(10,2) NOT NULL DEFAULT 0 CHECK (montant_total_standard >= 0),
+    montant_total DECIMAL(10,2) GENERATED ALWAYS AS (montant_total_premium + montant_total_standard) STORED,
+    
     montant_paye DECIMAL(10,2) DEFAULT 0 CHECK (montant_paye >= 0),
-    montant_restant DECIMAL(10,2) GENERATED ALWAYS AS (montant_total - montant_paye) STORED,
+    montant_restant DECIMAL(10,2) GENERATED ALWAYS AS (montant_total_premium + montant_total_standard - montant_paye) STORED,
     
     mode_reservation VARCHAR(50) DEFAULT 'SUR_PLACE' 
         CHECK (mode_reservation IN ('SUR_PLACE', 'TELEPHONE', 'EN_LIGNE')),
@@ -343,6 +352,82 @@ CREATE INDEX idx_paiement_reference ON paiement(type_paiement, reference_id);
 CREATE INDEX idx_depense_date ON depense(date_depense DESC, type_depense);
 
 -- ============================================
+-- FONCTIONS (doivent être créées AVANT les vues)
+-- ============================================
+
+-- Fonction : Calculer montant reservation (Premium + Standard)
+CREATE OR REPLACE FUNCTION fn_calculer_montant_reservation(
+    p_voyage_id BIGINT,
+    p_nombre_places_premium BIGINT,
+    p_nombre_places_standard BIGINT
+)
+RETURNS NUMERIC AS $$
+DECLARE
+    v_prix_premium NUMERIC;
+    v_prix_standard NUMERIC;
+    v_montant_premium NUMERIC;
+    v_montant_standard NUMERIC;
+    v_montant_total NUMERIC;
+BEGIN
+    SELECT tar.prix_place_premium, tar.prix_place_standard 
+    INTO v_prix_premium, v_prix_standard
+    FROM voyage v
+    JOIN trajet t ON v.trajet_id = t.id_trajet
+    JOIN tarif tar ON t.id_trajet = tar.trajet_id
+    WHERE v.id_voyage = p_voyage_id;
+    
+    IF v_prix_premium IS NULL OR v_prix_standard IS NULL THEN
+        RAISE EXCEPTION 'Tarif introuvable pour le voyage';
+    END IF;
+    
+    v_montant_premium := v_prix_premium * p_nombre_places_premium;
+    v_montant_standard := v_prix_standard * p_nombre_places_standard;
+    v_montant_total := v_montant_premium + v_montant_standard;
+    
+    RETURN v_montant_total;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Fonction : Calculer CA maximum possible pour un voyage
+CREATE OR REPLACE FUNCTION fn_ca_max_voyage(
+    p_voyage_id BIGINT
+)
+RETURNS NUMERIC AS $$
+DECLARE
+    v_nombre_places_premium BIGINT;
+    v_nombre_places_standard BIGINT;
+    v_prix_premium NUMERIC;
+    v_prix_standard NUMERIC;
+    v_ca_max NUMERIC;
+BEGIN
+    -- Recuperer les places du vehicule
+    SELECT ve.nombre_places_premium, ve.nombre_places_standard
+    INTO v_nombre_places_premium, v_nombre_places_standard
+    FROM voyage v
+    JOIN vehicule ve ON v.vehicule_id = ve.id_vehicule
+    WHERE v.id_voyage = p_voyage_id;
+    
+    -- Recuperer les tarifs du trajet
+    SELECT tar.prix_place_premium, tar.prix_place_standard
+    INTO v_prix_premium, v_prix_standard
+    FROM voyage v
+    JOIN trajet t ON v.trajet_id = t.id_trajet
+    JOIN tarif tar ON t.id_trajet = tar.trajet_id
+    WHERE v.id_voyage = p_voyage_id;
+    
+    IF v_nombre_places_premium IS NULL OR v_prix_premium IS NULL THEN
+        RAISE EXCEPTION 'Donnees incompletes pour calculer CA max du voyage %', p_voyage_id;
+    END IF;
+    
+    -- CA max = (places_premium × prix_premium) + (places_standard × prix_standard)
+    v_ca_max := (v_nombre_places_premium * v_prix_premium) + 
+                (v_nombre_places_standard * v_prix_standard);
+    
+    RETURN v_ca_max;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================
 -- VUE : RECETTES (Calculees, pas stockees)
 -- ============================================
 
@@ -472,6 +557,128 @@ LEFT JOIN v_recettes r ON r.voyage_id = v.id_voyage
 GROUP BY v.id_voyage, v.code_voyage, v.date_depart, t.ville_depart, t.ville_arrivee;
 
 
+-- ============================================
+-- 🎯 VUE FILTReE POUR ANALYTICS VOYAGE (Table Pivot)
+-- ============================================
+-- Vue complete: TOUS les champs du voyage + chiffre d'affaires calcule
+CREATE VIEW v_voyage_analytics AS
+SELECT 
+    -- ✅ TOUS les colonnes de la table VOYAGE
+    v.id_voyage,
+    v.code_voyage,
+    v.date_depart,
+    v.date_arrivee_prevue,
+    v.date_arrivee_reelle,
+    v.statut,
+    v.prix_par_place,
+    v.remarques,
+    v.date_creation,
+    v.date_modification,
+    
+    -- 🔗 ReFeRENCES (pour filtrage par circuit)
+    v.trajet_id,
+    v.vehicule_id,
+    v.chauffeur_id,
+    v.aide_chauffeur_id,
+    
+    -- 📊 INFORMATIONS LIeES (pour affichage)
+    t.code AS trajet_code,
+    t.ville_depart,
+    t.ville_arrivee,
+    t.distance_km,
+    
+    ve.immatriculation,
+    ve.nombre_places_premium,
+    ve.nombre_places_standard,
+    ve.nombre_places,
+    
+    p.nom AS chauffeur_nom,
+    p.prenom AS chauffeur_prenom,
+    
+    -- 💰 CHIFFRE D'AFFAIRES (CA) - Calcul en temps reel (Premium + Standard)
+    COALESCE(SUM(
+        CASE 
+            WHEN res.statut NOT IN ('ANNULE') 
+            THEN res.montant_paye 
+            ELSE 0 
+        END
+    ), 0) AS chiffre_affaire,
+    
+    -- Details CA par type de place
+    COALESCE(SUM(
+        CASE 
+            WHEN res.statut NOT IN ('ANNULE') 
+            THEN res.montant_total_premium 
+            ELSE 0 
+        END
+    ), 0) AS ca_premium,
+    
+    COALESCE(SUM(
+        CASE 
+            WHEN res.statut NOT IN ('ANNULE') 
+            THEN res.montant_total_standard 
+            ELSE 0 
+        END
+    ), 0) AS ca_standard,
+    
+    COALESCE(SUM(
+        CASE 
+            WHEN res.statut NOT IN ('ANNULE') 
+            THEN res.montant_total 
+            ELSE 0 
+        END
+    ), 0) AS montant_total_reserve,
+    
+    COALESCE(COUNT(
+        CASE 
+            WHEN res.statut NOT IN ('ANNULE') 
+            THEN 1 
+        END
+    ), 0) AS nb_reservations,
+    
+    -- Places vendues (Premium + Standard)
+    COALESCE(SUM(
+        CASE 
+            WHEN res.statut NOT IN ('ANNULE') 
+            THEN res.nombre_places_premium 
+            ELSE 0 
+        END
+    ), 0) AS places_premium_vendues,
+    
+    COALESCE(SUM(
+        CASE 
+            WHEN res.statut NOT IN ('ANNULE') 
+            THEN res.nombre_places_standard 
+            ELSE 0 
+        END
+    ), 0) AS places_standard_vendues,
+    
+    COALESCE(SUM(
+        CASE 
+            WHEN res.statut NOT IN ('ANNULE') 
+            THEN res.nombre_places 
+            ELSE 0 
+        END
+    ), 0) AS places_vendues,
+    
+    -- CA max possible pour ce voyage
+    fn_ca_max_voyage(v.id_voyage) AS ca_max_possible
+    
+FROM voyage v
+INNER JOIN trajet t ON v.trajet_id = t.id_trajet
+INNER JOIN vehicule ve ON v.vehicule_id = ve.id_vehicule
+INNER JOIN personne p ON v.chauffeur_id = p.id_personne
+LEFT JOIN reservation res ON res.voyage_id = v.id_voyage
+GROUP BY 
+    v.id_voyage, v.code_voyage, v.date_depart, v.date_arrivee_prevue, 
+    v.date_arrivee_reelle, v.statut, v.prix_par_place, v.remarques,
+    v.date_creation, v.date_modification, v.trajet_id, v.vehicule_id,
+    v.chauffeur_id, v.aide_chauffeur_id, t.code, t.ville_depart, 
+    t.ville_arrivee, t.distance_km, ve.immatriculation, 
+    ve.nombre_places_premium, ve.nombre_places_standard, ve.nombre_places,
+    p.nom, p.prenom;
+
+
 -- ✅ TRIGGER : Verifier places disponibles AVANT insertion
 CREATE OR REPLACE FUNCTION fn_check_places_avant_reservation()
 RETURNS TRIGGER AS $$
@@ -567,27 +774,157 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Fonction : Calculer montant reservation
-CREATE OR REPLACE FUNCTION fn_calculer_montant_reservation(
-    p_voyage_id BIGINT,
-    p_nombre_places BIGINT
+-- Fonction 1 : Filtrer par TRAJET (Circuit)
+CREATE OR REPLACE FUNCTION fn_voyages_par_circuit(
+    p_trajet_id BIGINT
 )
-RETURNS NUMERIC AS $$
-DECLARE
-    v_prix_unitaire NUMERIC;
-    v_montant_total NUMERIC;
+RETURNS TABLE (
+    id_voyage BIGINT,
+    code_voyage VARCHAR,
+    date_depart TIMESTAMP,
+    statut VARCHAR,
+    trajet_code VARCHAR,
+    ville_depart VARCHAR,
+    ville_arrivee VARCHAR,
+    distance_km NUMERIC,
+    immatriculation VARCHAR,
+    chauffeur_nom VARCHAR,
+    chauffeur_prenom VARCHAR,
+    chiffre_affaire NUMERIC,
+    nb_reservations BIGINT,
+    places_vendues BIGINT
+) AS $$
 BEGIN
-    SELECT prix_par_place INTO v_prix_unitaire
-    FROM voyage
-    WHERE id_voyage = p_voyage_id;
-    
-    IF v_prix_unitaire IS NULL THEN
-        RAISE EXCEPTION 'Voyage introuvable';
-    END IF;
-    
-    v_montant_total := v_prix_unitaire * p_nombre_places;
-    
-    RETURN v_montant_total;
+    RETURN QUERY
+    SELECT 
+        va.id_voyage,
+        va.code_voyage,
+        va.date_depart,
+        va.statut,
+        va.trajet_code,
+        va.ville_depart,
+        va.ville_arrivee,
+        va.distance_km,
+        va.immatriculation,
+        va.chauffeur_nom,
+        va.chauffeur_prenom,
+        va.chiffre_affaire,
+        va.nb_reservations,
+        va.places_vendues
+    FROM v_voyage_analytics va
+    WHERE va.trajet_id = p_trajet_id
+    ORDER BY va.date_depart DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Fonction 2 : Filtrer par PLAGE DE CHIFFRE D'AFFAIRE (CA Min/Max)
+CREATE OR REPLACE FUNCTION fn_voyages_par_chiffre_affaire(
+    p_ca_min NUMERIC DEFAULT 0,
+    p_ca_max NUMERIC DEFAULT 999999999.99
+)
+RETURNS TABLE (
+    id_voyage BIGINT,
+    code_voyage VARCHAR,
+    date_depart TIMESTAMP,
+    statut VARCHAR,
+    trajet_code VARCHAR,
+    ville_depart VARCHAR,
+    ville_arrivee VARCHAR,
+    immatriculation VARCHAR,
+    chauffeur_nom VARCHAR,
+    chiffre_affaire NUMERIC,
+    nb_reservations BIGINT,
+    places_vendues BIGINT,
+    taux_occupation_pct NUMERIC
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        va.id_voyage,
+        va.code_voyage,
+        va.date_depart,
+        va.statut,
+        va.trajet_code,
+        va.ville_depart,
+        va.ville_arrivee,
+        va.immatriculation,
+        va.chauffeur_nom,
+        va.chiffre_affaire,
+        va.nb_reservations,
+        va.places_vendues,
+        ROUND((va.places_vendues::NUMERIC / va.nombre_places) * 100, 2) AS taux_occupation_pct
+    FROM v_voyage_analytics va
+    WHERE va.chiffre_affaire >= p_ca_min 
+      AND va.chiffre_affaire <= p_ca_max
+    ORDER BY va.chiffre_affaire DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Fonction 3 : Filtre COMBINe (Circuit + CA Min + CA Max)
+CREATE OR REPLACE FUNCTION fn_voyages_filtre_complet(
+    p_trajet_id BIGINT DEFAULT NULL,
+    p_ca_min NUMERIC DEFAULT 0,
+    p_ca_max NUMERIC DEFAULT 999999999.99,
+    p_statut VARCHAR DEFAULT NULL
+)
+RETURNS TABLE (
+    id_voyage BIGINT,
+    code_voyage VARCHAR,
+    date_depart TIMESTAMP,
+    date_arrivee_prevue TIMESTAMP,
+    statut VARCHAR,
+    trajet_code VARCHAR,
+    ville_depart VARCHAR,
+    ville_arrivee VARCHAR,
+    distance_km NUMERIC,
+    immatriculation VARCHAR,
+    nombre_places BIGINT,
+    chauffeur_nom VARCHAR,
+    chauffeur_prenom VARCHAR,
+    prix_par_place NUMERIC,
+    chiffre_affaire NUMERIC,
+    montant_total_reserve NUMERIC,
+    nb_reservations BIGINT,
+    places_vendues BIGINT,
+    taux_occupation_pct NUMERIC,
+    ca_par_place NUMERIC
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        va.id_voyage,
+        va.code_voyage,
+        va.date_depart,
+        va.date_arrivee_prevue,
+        va.statut,
+        va.trajet_code,
+        va.ville_depart,
+        va.ville_arrivee,
+        va.distance_km,
+        va.immatriculation,
+        va.nombre_places,
+        va.chauffeur_nom,
+        va.chauffeur_prenom,
+        va.prix_par_place,
+        va.chiffre_affaire,
+        va.montant_total_reserve,
+        va.nb_reservations,
+        va.places_vendues,
+        ROUND((va.places_vendues::NUMERIC / va.nombre_places) * 100, 2) AS taux_occupation_pct,
+        CASE 
+            WHEN va.places_vendues > 0 
+            THEN ROUND(va.chiffre_affaire / va.places_vendues, 2)
+            ELSE 0
+        END AS ca_par_place
+    FROM v_voyage_analytics va
+    WHERE 
+        (p_trajet_id IS NULL OR va.trajet_id = p_trajet_id)
+        AND va.chiffre_affaire >= p_ca_min
+        AND va.chiffre_affaire <= p_ca_max
+        AND (p_statut IS NULL OR va.statut = p_statut)
+    ORDER BY va.date_depart DESC;
 END;
 $$ LANGUAGE plpgsql;
 

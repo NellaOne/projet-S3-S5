@@ -38,7 +38,13 @@ public class Vehicule {
     private Integer annee;
     private String couleur;
     
-    @Column(nullable = false)
+    @Column(name = "nombre_places_premium", nullable = false)
+    private Integer nombrePlacesPremium = 0;
+    
+    @Column(name = "nombre_places_standard", nullable = false)
+    private Integer nombrePlacesStandard = 0;
+    
+    @Column(name = "nombre_places", nullable = false, columnDefinition = "BIGINT GENERATED ALWAYS AS (nombre_places_premium + nombre_places_standard) STORED")
     private Integer nombrePlaces;
     
     @Column(length = 50, unique = true)

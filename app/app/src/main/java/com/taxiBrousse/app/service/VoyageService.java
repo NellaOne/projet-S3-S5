@@ -45,9 +45,16 @@ public class VoyageService {
      */
     public List<DateDisponibleDTO> getDatesDisponibles(Long trajetId) {
         // Utiliser directement la requête du Repository
-        List<LocalDate> dates = voyageRepo.findDatesDisponiblesParTrajet(trajetId);
+        List<String> dateStrings = voyageRepo.findDatesDisponiblesParTrajet(trajetId);
         
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy");
+        // Convertir les strings en LocalDate
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        List<LocalDate> dates = dateStrings.stream()
+            .map(dateStr -> LocalDate.parse(dateStr, formatter))
+            .sorted()  // Trier les dates en ordre croissant
+            .collect(Collectors.toList());
+        
+        DateTimeFormatter displayFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy");
         
         return dates.stream().map(date -> {
             // Compter les voyages pour cette date
@@ -58,7 +65,7 @@ public class VoyageService {
                 date,
                 nbVoyages,
                 String.format("%s (%d voyage%s)", 
-                    date.format(formatter),
+                    date.format(displayFormatter),
                     nbVoyages,
                     nbVoyages > 1 ? "s" : "")
             );
@@ -205,7 +212,37 @@ public class VoyageService {
     // ============================================
     
     /**
-     * Calcule le montant total d'une réservation
+     * Calcule les montants d'une réservation (PREMIUM + STANDARD)
+     * @param voyageId ID du voyage
+     * @param nombrePlacesPremium Nombre de places premium
+     * @param nombrePlacesStandard Nombre de places standard
+     * @return Montant total
+     */
+    public Map<String, BigDecimal> calculerMontantsReservation(Long voyageId, Integer nombrePlacesPremium, Integer nombrePlacesStandard) {
+        Voyage voyage = voyageRepo.findById(voyageId)
+            .orElseThrow(() -> new RuntimeException("Voyage non trouvé"));
+        
+        Trajet trajet = voyage.getTrajet();
+        Tarif tarif = trajetRepo.findTarifByTrajetId(trajet.getId());
+        
+        if (tarif == null) {
+            throw new RuntimeException("Tarif non trouvé pour ce trajet");
+        }
+        
+        BigDecimal montantPremium = tarif.getPrixPlacePremium().multiply(BigDecimal.valueOf(nombrePlacesPremium));
+        BigDecimal montantStandard = tarif.getPrixPlaceStandard().multiply(BigDecimal.valueOf(nombrePlacesStandard));
+        BigDecimal montantTotal = montantPremium.add(montantStandard);
+        
+        Map<String, BigDecimal> result = new HashMap<>();
+        result.put("montantPremium", montantPremium);
+        result.put("montantStandard", montantStandard);
+        result.put("montantTotal", montantTotal);
+        
+        return result;
+    }
+    
+    /**
+     * Calcule le montant total d'une réservation (ancien flux - compatibilité)
      * @param voyageId ID du voyage
      * @param nombrePlaces Nombre de places à réserver
      * @return Montant total
