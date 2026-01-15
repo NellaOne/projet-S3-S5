@@ -114,45 +114,33 @@
         <!-- 📊 TABLEAU ANALYTICS -->
         <div class="card">
             <div class="card-header">
-                <h5><i class="fas fa-table"></i> Voyages - Toutes les Colonnes Pivot</h5>
+                <h5><i class="fas fa-table"></i> Voyages - Analyse Complète</h5>
                 <small class="text-muted">Affichage: <span th:text="${voyages.size()}">0</span> / <span th:text="${totalVoyages}">0</span> voyages</small>
             </div>
-            <div class="card-body table-responsive">
-                <table class="table table-hover table-sm align-middle">
+            <div class="card-body table-responsive" style="overflow-x: auto;">
+                <table class="table table-hover table-sm align-middle" style="min-width: 1200px;">
                     <thead class="table-dark">
                         <tr>
-                            <!-- COLONNES VOYAGE -->
                             <th>Code</th>
                             <th>Départ</th>
                             <th>Statut</th>
-                            
-                            <!-- COLONNES CIRCUIT/TRAJET -->
                             <th>Circuit</th>
                             <th>Distance</th>
-                            
-                            <!-- COLONNES VÉHICULE -->
                             <th>Véhicule</th>
                             <th>Places</th>
-                            
-                            <!-- COLONNES CHAUFFEUR -->
                             <th>Chauffeur</th>
-                            
-                            <!-- COLONNES TARIFICATION -->
-                            <th>Prix/Place</th>
-                            
-                            <!-- COLONNES ANALYTIQUES -->
+                            <th class="text-end">Prix/Place</th>
+                            <th class="text-end bg-warning text-dark"><small>CA Max</small></th>
                             <th class="text-end">CA Réalisé</th>
                             <th class="text-end">Réservations</th>
                             <th class="text-end">Places Vendues</th>
-                            <th class="text-end">Taux Occupation</th>
+                            <th class="text-end">Taux</th>
                             <th class="text-end">CA/Place</th>
-                            
                             <th class="text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr th:each="voyage : ${voyages}">
-                            <!-- COLONNES VOYAGE -->
                             <td>
                                 <a th:href="@{/voyages/{id}(id=${voyage.id})}" 
                                    th:text="${voyage.codeVoyage}"
@@ -165,63 +153,35 @@
                                 <span th:if="${voyage.statut == 'TERMINE'}" class="badge bg-success">Terminé</span>
                                 <span th:if="${voyage.statut == 'ANNULE'}" class="badge bg-danger">Annulé</span>
                             </td>
-                            
-                            <!-- COLONNES TRAJET -->
-                            <td>
-                            <th class="text-end bg-warning text-dark fs-5">CA Max</th>
-                            <th class="text-end">CA Réalisé</th>
-                            <th class="text-end">Réservations</th>
-                            <th class="text-end">Places Vendues</th>
-                            <th class="text-end">Taux Occupation</th>
-                            <th class="text-end">CA/Place</th>
+                            <td th:text="${voyage.trajetCode}">T001</td>
                             <td th:text="${voyage.distanceKm} + ' km'">250 km</td>
-                            
-                            <!-- COLONNES VÉHICULE -->
-                            <td th:text="${voyage.immatriculation}">1234 TAA</td>
-                            <td th:text="${voyage.nombrePlaces}">14</td>
-                            
-                            <!-- COLONNES CHAUFFEUR -->
+                            <td th:text="${voyage.immatriculation}">501-MG-ANT</td>
+                            <td th:text="${voyage.nombrePlaces}">30</td>
                             <td th:text="${voyage.chauffeurComplet}">Jean RAKOTO</td>
-                            
-                            <!-- COLONNES TARIFICATION -->
                             <td class="text-end" th:text="${#numbers.formatDecimal(voyage.prixParPlace, 0, 'COMMA', 0, 'POINT')} + ' Ar'">50000 Ar</td>
-                            
-                            <!-- COLONNES ANALYTIQUES -->
+                            <td class="text-end bg-warning text-dark fw-bold">
+                                <span th:text="${#numbers.formatDecimal(voyage.caMaxPossible, 0, 'COMMA', 0, 'POINT')} + ' Ar'">0 Ar</span>
+                            </td>
                             <td class="text-end">
-                                <strong class="text-success" th:text="${voyage.getCaFormatted()}">500000 Ar</strong>
+                                <strong class="text-success" th:text="${#numbers.formatDecimal(voyage.chiffreAffaire, 0, 'COMMA', 0, 'POINT')} + ' Ar'">500000 Ar</strong>
                             </td>
                             <td class="text-end" th:text="${voyage.nbReservations}">5</td>
                             <td class="text-end" th:text="${voyage.placesVendues}">8</td>
                             <td class="text-end">
-                                <span th:text="${voyage.getTauxOccupationFormatted()}">57.1%</span>
-                                <div class="progress mt-1" style="height: 20px;">
-                                    <div class="progress-bar bg-success" role="progressbar" 
-                                         th:style="'width: ' + ${voyage.tauxOccupation} + '%'">
-                                    </div>
-                                </div>
+                                <small th:text="${#numbers.formatDecimal(voyage.tauxOccupation, 0, 'COMMA', 1, 'POINT')} + '%'">57.1%</small>
                             </td>
-                            <td class="text-end" th:text="${voyage.getCaParPlaceFormatted()}">62500 Ar</td>
-                            
+                            <td class="text-end" th:text="${#numbers.formatDecimal(voyage.caParPlace, 0, 'COMMA', 0, 'POINT')} + ' Ar'">62500 Ar</td>
                             <td class="text-center">
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <a th:href="@{/voyages/{id}(id=${voyage.id})}" 
-                                       class="btn btn-info" title="Détails">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                <td class="text-end bg-warning text-dark fs-5">
-                                    <strong th:text="${#numbers.formatDecimal(voyage.caMaxPossible, 0, 'COMMA', 0, 'POINT')} + ' Ar'">0 Ar</strong>
-                                </td>
-                                <td class="text-end">
-                                    <strong class="text-success" th:text="${voyage.getCaFormatted()}">500000 Ar</strong>
-                                </td>
-                                    </a>
-                                </div>
+                                <a th:href="@{/voyages/{id}(id=${voyage.id})}" 
+                                   class="btn btn-sm btn-info" title="Détails">
+                                    <i class="fas fa-eye"></i>
+                                </a>
                             </td>
                         </tr>
                         
                         <!-- Message si aucun voyage -->
                         <tr th:if="${voyages.isEmpty()}">
-                            <td colspan="15" class="text-center py-4">
+                            <td colspan="16" class="text-center py-4">
                                 <i class="fas fa-inbox text-muted"></i>
                                 <p class="text-muted mt-2">Aucun voyage ne correspond aux filtres</p>
                             </td>

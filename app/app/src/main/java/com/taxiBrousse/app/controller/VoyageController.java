@@ -23,10 +23,25 @@ public class VoyageController {
     @Autowired private PersonneRepository personneRepo;
     @Autowired private TrajetRepository trajetRepo;
     @Autowired private TarifRepository tarifRepo;
+    @Autowired private ReservationRepository reservationRepo;
     
     @GetMapping
     public String list(Model model) {
-        model.addAttribute("voyages", voyageRepo.findAll());
+        List<Voyage> voyages = voyageRepo.findAll();
+        Map<Long, Long> placesReserveesMap = new HashMap<>();
+        
+        // Calculer les places réservées pour chaque voyage
+        voyages.forEach(voyage -> {
+            long placesReservees = reservationRepo
+                .findByVoyageIdAndStatutNot(voyage.getId(), "ANNULE")
+                .stream()
+                .mapToLong(Reservation::getNombrePlaces)
+                .sum();
+            placesReserveesMap.put(voyage.getId(), placesReservees);
+        });
+        
+        model.addAttribute("voyages", voyages);
+        model.addAttribute("placesReserveesMap", placesReserveesMap);
         return "voyages/list";
     }
     
@@ -58,7 +73,16 @@ public class VoyageController {
     @GetMapping("/{id}")
     public String details(@PathVariable Long id, Model model) {
         Voyage voyage = voyageRepo.findById(id).orElseThrow();
+        
+        // Calculer les places réservées
+        long placesReservees = reservationRepo
+            .findByVoyageIdAndStatutNot(id, "ANNULE")
+            .stream()
+            .mapToLong(Reservation::getNombrePlaces)
+            .sum();
+        
         model.addAttribute("voyage", voyage);
+        model.addAttribute("placesReservees", placesReservees);
         return "voyages/details";
     }
     

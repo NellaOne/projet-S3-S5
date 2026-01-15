@@ -49,7 +49,7 @@
                                     10/01/2026 08:00
                                 </td>
                                 <td>
-                                    <span class="badge bg-info" th:text="${v.nombrePlacesDisponibles}">5</span>
+                                    <span class="badge bg-info" th:text="${v.vehicule.nombrePlaces - placesReserveesMap.get(v.id)}">5</span>
                                 </td>
                                 <td th:text="${#numbers.formatDecimal(v.prixParPlace, 0, 'COMMA', 0, 'POINT')} + ' Ar'">
                                     50000 Ar
