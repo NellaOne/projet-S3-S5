@@ -125,6 +125,6 @@ public class VoyageAnalyticsDTO {
     }
     
     public String getChauffeurComplet() {
-        return String.format("%s %s", chauffeurNom, chauffeurPrenom != null ? chauffeurPrenom : "");
-    }
+            return chauffeurNom + (chauffeurPrenom != null && !chauffeurPrenom.isEmpty() ? (" " + chauffeurPrenom) : "");
+            }
 }

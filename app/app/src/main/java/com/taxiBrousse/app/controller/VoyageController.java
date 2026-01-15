@@ -46,7 +46,8 @@ public class VoyageController {
         List<Tarif> tarifs = tarifRepo.findByTrajetIdAndActifTrue(voyage.getTrajet().getId());
         if (!tarifs.isEmpty()) {
             Tarif tarif = tarifs.get(0);
-            voyage.setPrixParPlace(tarif.getPrixBase());
+            // Par défaut, on met le prix standard comme prix de base
+            voyage.setPrixParPlace(tarif.getPrixPlaceStandard());
         }
         
         Voyage created = voyageService.creerVoyage(voyage);

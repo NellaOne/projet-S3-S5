@@ -1,10 +1,3 @@
--- ============================================
--- DONNEES ADAPTEES POUR SCHEMA PREMIUM/STANDARD
--- ============================================
--- Distribution: Places Premium = 25%, Places Standard = 75%
--- Tarification: Premium ≈ 1.75x Standard
--- a EXeCUTER APReS table.sql pour initialiser les donnees
--- ============================================
 
 \c taxi_brousse;
 
@@ -57,39 +50,7 @@ VALUES
     ('Garage Fianarantsoa Auto', 'Centre-ville, Fianarantsoa', '+261 20 75 234 567', 'garage.fiana@taxi.mg', 'Visite technique', TRUE),
     ('Garage Toliara Entretien', 'Route du port, Toliara', '+261 20 94 345 678', 'garage.tolia@taxi.mg', 'Carrosserie', TRUE);
 
--- ============================================
--- VEHICULES (Avec distribution Premium/Standard)
--- ============================================
--- Bus 30 places : 8 premium (25%) + 22 standard (75%)
--- Van 15 places : 4 premium (27%) + 11 standard (73%)
--- Minibus 7 places : 2 premium (29%) + 5 standard (71%)
--- Taxi 4 places : 1 premium (25%) + 3 standard (75%)
--- 4x4 5 places : 1 premium (20%) + 4 standard (80%)
 
-INSERT INTO vehicule (
-    immatriculation, type_vehicule_id, garage_id, marque, modele, annee, couleur, numero_chassis, 
-    nombre_places_premium, nombre_places_standard, 
-    statut, kilometrage_actuel, date_acquisition, date_derniere_visite_technique, date_prochaine_visite_technique, actif
-)
-VALUES 
-    -- Bus 30 places (8 premium + 22 standard)
-    ('501-MG-ANT', 1, 1, 'Mercedes', 'Sprinter 513CDI', 2015, 'Blanc', 'WDB90X194F7123456', 8, 22, 'DISPONIBLE', 125000.50, '2015-06-01', '2025-10-15', '2026-10-15', TRUE),
-    ('502-MG-ANT', 1, 1, 'Hyundai', 'County 34', 2018, 'Bleu', 'KMHEC4A46JU123457', 8, 22, 'DISPONIBLE', 89000.00, '2018-03-15', '2025-11-20', '2026-11-20', TRUE),
-    
-    -- Van 15 places (4 premium + 11 standard)
-    ('701-MG-ANTSI', 2, 2, 'Toyota', 'Hiace', 2017, 'Gris', '4T1RF1FA5H1123458', 4, 11, 'EN_SERVICE', 95500.75, '2017-05-20', '2025-09-10', '2026-09-10', TRUE),
-    ('702-MG-ANTSI', 2, 2, 'Ford', 'Transit', 2016, 'Blanc', 'WF0XXXWPFG1123459', 4, 11, 'DISPONIBLE', 102000.00, '2016-08-10', '2025-08-05', '2026-08-05', TRUE),
-    
-    -- Minibus 7 places (2 premium + 5 standard)
-    ('801-MG-FIANA', 3, 3, 'Peugeot', 'Boxer', 2019, 'Orange', 'VF3BJFNXS00123460', 2, 5, 'DISPONIBLE', 45000.25, '2019-09-01', '2025-12-01', '2026-12-01', TRUE),
-    ('802-MG-FIANA', 3, 3, 'Renault', 'Master', 2018, 'Jaune', 'VF1FG000161123461', 2, 5, 'EN_MAINTENANCE', 52100.00, '2018-11-20', '2025-07-15', '2026-07-15', TRUE),
-    
-    -- Taxi 4 places (1 premium + 3 standard)
-    ('901-MG-TOLIA', 4, 4, 'Peugeot', '301', 2020, 'Blanc', 'VF3CCFFD251123462', 1, 3, 'DISPONIBLE', 28000.50, '2020-07-12', '2025-11-01', '2026-11-01', TRUE),
-    ('902-MG-TOLIA', 4, 4, 'Hyundai', 'i10', 2021, 'Gris', 'KMHEC5A46JU123463', 1, 3, 'DISPONIBLE', 18500.00, '2021-02-28', '2025-12-10', '2026-12-10', TRUE),
-    
-    -- 4x4 Safari (1 premium + 4 standard)
-    ('1001-MG-ANT', 5, 1, 'Toyota', 'Land Cruiser', 2014, 'Noir', 'JTMHY4F34E5123464', 1, 4, 'DISPONIBLE', 180000.00, '2014-04-10', '2025-06-20', '2026-06-20', TRUE);
 
 -- ============================================
 -- PERSONNES (Chauffeurs, Aides, Clients, Employes)
@@ -117,6 +78,49 @@ VALUES
     ('EMPLOYE', 'Randrianasolo', 'Olivier', '301234567', '1980-03-18', '+261 34 77 88 999', 'olivier.randi@email.mg', 'Antananarivo', NULL, NULL, NULL, 'ACTIF', TRUE),
     ('EMPLOYE', 'Ranaivoson', 'Catherine', '302234567', '1985-09-22', '+261 34 88 99 000', 'catherine.rana@email.mg', 'Antananarivo', NULL, NULL, NULL, 'ACTIF', TRUE),
     ('EMPLOYE', 'Rakotonirina', 'David', '303234567', '1992-05-05', '+261 34 99 00 111', 'david.rako@email.mg', 'Antsirabe', NULL, NULL, NULL, 'ACTIF', TRUE);
+
+
+-- ============================================
+-- CONFIGURATION
+-- ============================================
+INSERT INTO configuration (cle, valeur, type_valeur, categorie, description, date_modification)
+VALUES 
+    ('MONTANT_ACOMPTE_MIN_POURCENT', '30', 'NUMBER', 'PAIEMENTS', 'Acompte minimum requis en pourcentage', CURRENT_TIMESTAMP),
+    ('DELAI_ANNULATION_HEURES', '4', 'NUMBER', 'RESERVATIONS', 'Delai avant depart pour annulation gratuite', CURRENT_TIMESTAMP),
+    ('TAUX_PENALITE_ANNULATION', '10', 'NUMBER', 'RESERVATIONS', 'Penalite annulation en pourcentage', CURRENT_TIMESTAMP),
+    ('DELAI_EXPIRATION_LISTE_ATTENTE_JOURS', '30', 'NUMBER', 'LISTE_ATTENTE', 'Jours avant expiration automatique', CURRENT_TIMESTAMP),
+    ('DEVISE_PRINCIPALE', 'MGA', 'STRING', 'GENERAL', 'Devise utilisee pour tous les montants', CURRENT_TIMESTAMP),
+    ('NOM_ENTREPRISE', 'Taxi Brousse Express', 'STRING', 'GENERAL', 'Nom officiel de l''entreprise', CURRENT_TIMESTAMP),
+    ('TELEPHONE_PRINCIPAL', '+261 20 22 123 456', 'STRING', 'CONTACT', 'Telephone principal d''accueil', CURRENT_TIMESTAMP),
+    ('EMAIL_SUPPORT', 'support@taxibrousse.mg', 'STRING', 'CONTACT', 'Email support client', CURRENT_TIMESTAMP),
+    ('CAPACITE_MOYENNE_VOYAGE', '20', 'NUMBER', 'OPERATIONNEL', 'Capacite moyenne estimee pour calculs', CURRENT_TIMESTAMP),
+    ('PRIX_MOYEN_KM', '150', 'NUMBER', 'TARIFICATION', 'Prix moyen par km (en MGA)', CURRENT_TIMESTAMP);
+
+
+INSERT INTO vehicule (
+    immatriculation, type_vehicule_id, garage_id, marque, modele, annee, couleur, numero_chassis, 
+    nombre_places_premium, nombre_places_standard, 
+    statut, kilometrage_actuel, date_acquisition, date_derniere_visite_technique, date_prochaine_visite_technique, actif
+)
+VALUES 
+    -- Bus 30 places (8 premium + 22 standard)
+    ('501-MG-ANT', 1, 1, 'Mercedes', 'Sprinter 513CDI', 2015, 'Blanc', 'WDB90X194F7123456', 8, 22, 'DISPONIBLE', 125000.50, '2015-06-01', '2025-10-15', '2026-10-15', TRUE),
+    ('502-MG-ANT', 1, 1, 'Hyundai', 'County 34', 2018, 'Bleu', 'KMHEC4A46JU123457', 8, 22, 'DISPONIBLE', 89000.00, '2018-03-15', '2025-11-20', '2026-11-20', TRUE),
+    
+    -- Van 15 places (4 premium + 11 standard)
+    ('701-MG-ANTSI', 2, 2, 'Toyota', 'Hiace', 2017, 'Gris', '4T1RF1FA5H1123458', 4, 11, 'EN_SERVICE', 95500.75, '2017-05-20', '2025-09-10', '2026-09-10', TRUE),
+    ('702-MG-ANTSI', 2, 2, 'Ford', 'Transit', 2016, 'Blanc', 'WF0XXXWPFG1123459', 4, 11, 'DISPONIBLE', 102000.00, '2016-08-10', '2025-08-05', '2026-08-05', TRUE),
+    
+    -- Minibus 7 places (2 premium + 5 standard)
+    ('801-MG-FIANA', 3, 3, 'Peugeot', 'Boxer', 2019, 'Orange', 'VF3BJFNXS00123460', 2, 5, 'DISPONIBLE', 45000.25, '2019-09-01', '2025-12-01', '2026-12-01', TRUE),
+    ('802-MG-FIANA', 3, 3, 'Renault', 'Master', 2018, 'Jaune', 'VF1FG000161123461', 2, 5, 'EN_MAINTENANCE', 52100.00, '2018-11-20', '2025-07-15', '2026-07-15', TRUE),
+    
+    -- Taxi 4 places (1 premium + 3 standard)
+    ('901-MG-TOLIA', 4, 4, 'Peugeot', '301', 2020, 'Blanc', 'VF3CCFFD251123462', 1, 3, 'DISPONIBLE', 28000.50, '2020-07-12', '2025-11-01', '2026-11-01', TRUE),
+    ('902-MG-TOLIA', 4, 4, 'Hyundai', 'i10', 2021, 'Gris', 'KMHEC5A46JU123463', 1, 3, 'DISPONIBLE', 18500.00, '2021-02-28', '2025-12-10', '2026-12-10', TRUE),
+    
+    -- 4x4 Safari (1 premium + 4 standard)
+    ('1001-MG-ANT', 5, 1, 'Toyota', 'Land Cruiser', 2014, 'Noir', 'JTMHY4F34E5123464', 1, 4, 'DISPONIBLE', 180000.00, '2014-04-10', '2025-06-20', '2026-06-20', TRUE);
 
 -- ============================================
 -- TARIFS (Avec prix_place_standard ET prix_place_premium)
@@ -293,21 +297,7 @@ VALUES
     (2, 12, 3, CURRENT_DATE + INTERVAL '5 days', 'NOTIFIE', CURRENT_TIMESTAMP - INTERVAL '3 days', CURRENT_TIMESTAMP - INTERVAL '1 day', 'Place liberee - en attente confirmation'),
     (5, 10, 2, CURRENT_DATE + INTERVAL '10 days', 'EN_ATTENTE', CURRENT_TIMESTAMP - INTERVAL '1 week', NULL, NULL);
 
--- ============================================
--- CONFIGURATION
--- ============================================
-INSERT INTO configuration (cle, valeur, type_valeur, categorie, description, date_modification)
-VALUES 
-    ('MONTANT_ACOMPTE_MIN_POURCENT', '30', 'NUMBER', 'PAIEMENTS', 'Acompte minimum requis en pourcentage', CURRENT_TIMESTAMP),
-    ('DELAI_ANNULATION_HEURES', '4', 'NUMBER', 'RESERVATIONS', 'Delai avant depart pour annulation gratuite', CURRENT_TIMESTAMP),
-    ('TAUX_PENALITE_ANNULATION', '10', 'NUMBER', 'RESERVATIONS', 'Penalite annulation en pourcentage', CURRENT_TIMESTAMP),
-    ('DELAI_EXPIRATION_LISTE_ATTENTE_JOURS', '30', 'NUMBER', 'LISTE_ATTENTE', 'Jours avant expiration automatique', CURRENT_TIMESTAMP),
-    ('DEVISE_PRINCIPALE', 'MGA', 'STRING', 'GENERAL', 'Devise utilisee pour tous les montants', CURRENT_TIMESTAMP),
-    ('NOM_ENTREPRISE', 'Taxi Brousse Express', 'STRING', 'GENERAL', 'Nom officiel de l''entreprise', CURRENT_TIMESTAMP),
-    ('TELEPHONE_PRINCIPAL', '+261 20 22 123 456', 'STRING', 'CONTACT', 'Telephone principal d''accueil', CURRENT_TIMESTAMP),
-    ('EMAIL_SUPPORT', 'support@taxibrousse.mg', 'STRING', 'CONTACT', 'Email support client', CURRENT_TIMESTAMP),
-    ('CAPACITE_MOYENNE_VOYAGE', '20', 'NUMBER', 'OPERATIONNEL', 'Capacite moyenne estimee pour calculs', CURRENT_TIMESTAMP),
-    ('PRIX_MOYEN_KM', '150', 'NUMBER', 'TARIFICATION', 'Prix moyen par km (en MGA)', CURRENT_TIMESTAMP);
+
 
 -- ============================================
 -- AUDIT LOGS
@@ -346,7 +336,7 @@ VALUES
 -- SELECT SUM(nombre_places_premium + nombre_places_standard) AS places_totales FROM vehicule;
 -- SELECT * FROM v_voyages_reservables LIMIT 5;
 -- SELECT * FROM v_voyage_analytics WHERE id_voyage IN (1, 2, 3) LIMIT 5;
-SET prix_place_standard = 37500.00,
+UPDATE tarif SET prix_place_standard = 37500.00,
     prix_place_premium = 60000.00
 WHERE trajet_id = 1 AND type_tarif = 'WEEKEND';
 

@@ -5,6 +5,13 @@
     <div th:replace="~{fragments/common :: navbar}"></div>
     
     <div class="container-fluid px-4">
+        <div class="row mb-4">
+            <div class="col text-center">
+                <a href="/analytics" class="btn btn-warning btn-lg" style="font-size:1.5em;">
+                    <i class="fas fa-star"></i> CA Maximum par Voyage
+                </a>
+            </div>
+        </div>
         <!-- Alert Success -->
         <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
             <i class="fas fa-check-circle"></i> <span th:text="${success}"></span>

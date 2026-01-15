@@ -59,9 +59,17 @@ public class Reservation {
     
     @Generated(GenerationTime.ALWAYS)
     @Column(name = "montant_restant", insertable = false, updatable = false)
-    
+    private BigDecimal montantRestant;
+
     @Column(length = 50)
     private String modeReservation = "SUR_PLACE"; // SUR_PLACE, TELEPHONE, EN_LIGNE
+        // Getter/Setter pour montantRestant (si Lombok ne le gère pas à cause du champ généré)
+        public BigDecimal getMontantRestant() {
+            return montantRestant;
+        }
+        public void setMontantRestant(BigDecimal montantRestant) {
+            this.montantRestant = montantRestant;
+        }
     
     @Column(length = 50)
     private String statut = "EN_ATTENTE"; // EN_ATTENTE, CONFIRME, PAYE, ANNULE, TERMINE

@@ -1,0 +1,607 @@
+================================================================================
+CAHIER DES CHARGES : CALCUL DU CA MAXIMUM POUR UN VOYAGE
+Projet : Taxi Brousse Express
+Fonctionnalité : Affichage du Chiffre d'Affaires Maximum possible pour un voyage
+================================================================================
+
+CONTEXTE MÉTIER :
+-----------------
+Une voiture possède :
+    - Des places PREMIUM (coûtent 140 000 Ar chacune)
+    - Des places STANDARD (coûtent 80 000 Ar chacune)
+
+Pour un VOYAGE spécifique (ex: Tana-Toamasina le 16 janvier 2025 à 08h avec Bus Mercedes):
+    - On veut connaître le MAXIMUM qu'on peut générer
+    - Formule : (nombre_places_premium × prix_place_premium) + (nombre_places_standard × prix_place_standard)
+    - Exemple : Bus avec 8 places premium + 22 places standard
+              = (8 × 140 000) + (22 × 80 000)
+              = 1 120 000 + 1 760 000
+              = 2 880 000 Ar (CA MAX)
+
+================================================================================
+1. AFFICHAGE (UI/UX)
+================================================================================
+
+DESSIN D'ÉCRAN :
+---------------
+Titre : "Chiffre d'Affaires Maximum - Détail Voyage"
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  CHIFFRE D'AFFAIRES MAXIMUM - DÉTAIL VOYAGE                        │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  1. Choisir un TRAJET :                                            │
+│     ┌─────────────────────────────────────────────────────────┐   │
+│     │ Sélectionner trajet...  ▼                               │   │
+│     │ • T001 : Antananarivo → Antsirabe (169.5 km)           │   │
+│     │ • T002 : Antsirabe → Miandrivazo (185 km)              │   │
+│     │ • T004 : Antananarivo → Fianarantsoa (407 km) [SELECT] │   │
+│     └─────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  2. Choisir un VOYAGE (dépend du trajet sélectionné) :             │
+│     ┌─────────────────────────────────────────────────────────┐   │
+│     │ Sélectionner voyage...  ▼                               │   │
+│     │ • VOY20250118001 - 16/01/2025 à 07h00 - Bus Mercedes   │   │
+│     │ • VOY20250118002 - 16/01/2025 à 14h00 - Van Toyota     │   │
+│     │ • VOY20250118003 - 17/01/2025 à 09h00 - Van Toyota[SEL]│   │
+│     └─────────────────────────────────────────────────────────┘   │
+│                                                                     │
+├─────────────────────────────────────────────────────────────────────┤
+│ DÉTAILS DU VOYAGE SÉLECTIONNÉ :                                    │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  Trajet :                    Antananarivo → Fianarantsoa          │
+│  Distance :                  407.0 km                              │
+│  Durée estimée :             600 minutes (10 heures)              │
+│                                                                     │
+│  Véhicule :                  Mercedes Sprinter 513CDI             │
+│  Immatriculation :           501-MG-ANT                           │
+│  État du véhicule :          DISPONIBLE                           │
+│                                                                     │
+│  Date & Heure départ :       16/01/2025 à 07h00                  │
+│  Chauffeur :                 Jean Randriamampoinimerina           │
+│  Aide chauffeur :            Luc Ravaloson                        │
+│                                                                     │
+├─────────────────────────────────────────────────────────────────────┤
+│ PLACES & TARIFICATION :                                            │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  Places PREMIUM :                                                  │
+│    • Nombre de places premium dans le véhicule : 8 places        │
+│    • Prix par place premium :                    95 000 Ar        │
+│    • Revenu max (places premium) :               760 000 Ar       │
+│                                                                     │
+│  Places STANDARD :                                                 │
+│    • Nombre de places standard dans le véhicule : 22 places      │
+│    • Prix par place standard :                    60 000 Ar       │
+│    • Revenu max (places standard) :               1 320 000 Ar    │
+│                                                                     │
+├─────────────────────────────────────────────────────────────────────┤
+│ RÉSULTAT FINAL :                                                   │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ╔═════════════════════════════════════════════════════════════╗  │
+│  ║  CA MAXIMUM POSSIBLE :  2 080 000 Ar                       ║  │
+│  ║  (si tous les places sont occupées et payées)              ║  │
+│  ╚═════════════════════════════════════════════════════════════╝  │
+│                                                                     │
+│                           [ CALCULER ]  [ RÉINITIALISER ]          │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+FLUX UI/UX (Chaînage dépendant) :
+----------------------------------
+1. L'utilisateur ouvre la page "Chiffre d'Affaires Maximum"
+2. Première action : Sélectionner un TRAJET
+   └─> Au changement de trajet : Appel AJAX pour charger les VOYAGES disponibles pour ce trajet
+3. Deuxième action : Sélectionner un VOYAGE
+   └─> Au changement de voyage : Appel AJAX pour charger les DÉTAILS du voyage
+        (Véhicule, Chauffeur, Places, Tarifs)
+4. Troisième action : Clic sur [CALCULER]
+   └─> Appel fonction métier : calculerCAMaxVoyage(voyageId)
+        └─> Retourne : Map avec {caPremium, caStandard, caMax}
+   └─> Affichage du résultat dans la section "RÉSULTAT FINAL"
+
+NOTION D'ENCHAÎNEMENT LOGIQUE :
+-------------------------------
+• On ne peut pas choisir n'importe quel voyage avec n'importe quel trajet
+• Les voyages affichés DÉPENDENT du trajet choisi
+• Les détails du voyage (véhicule, tarifs) se calculent DYNAMIQUEMENT
+• Le CA max se calcule À LA DEMANDE (quand on clique CALCULER)
+• L'affichage respecte la LOGIQUE MÉTIER réelle (tout ce qui s'affiche est possible dans la réalité)
+
+================================================================================
+2. MÉTIER (Logique Métier & Classes)
+================================================================================
+
+CLASSES IMPLIQUÉES :
+--------------------
+
+Classe TRAJET :
+    Attributs :
+        - id_trajet : BIGINT
+        - code : VARCHAR (ex: "T004")
+        - ville_depart : VARCHAR (ex: "Antananarivo")
+        - ville_arrivee : VARCHAR (ex: "Fianarantsoa")
+        - distance_km : DECIMAL (ex: 407.0)
+        - duree_estimee_minutes : BIGINT (ex: 600)
+        - description : TEXT
+        - actif : BOOLEAN
+        - date_creation : TIMESTAMP
+
+Classe VÉHICULE :
+    Attributs :
+        - id_vehicule : BIGINT
+        - immatriculation : VARCHAR (ex: "501-MG-ANT")
+        - type_vehicule_id : BIGINT (référence type_vehicule)
+        - marque : VARCHAR (ex: "Mercedes")
+        - modele : VARCHAR (ex: "Sprinter 513CDI")
+        - annee : BIGINT (ex: 2015)
+        - nombre_places_premium : BIGINT (ex: 8)
+        - nombre_places_standard : BIGINT (ex: 22)
+        - nombre_places : BIGINT (GENERATED = premium + standard)
+        - statut : VARCHAR (DISPONIBLE, EN_SERVICE, EN_MAINTENANCE, HORS_SERVICE)
+        - actif : BOOLEAN
+        - date_creation : TIMESTAMP
+
+Classe TARIF :
+    Attributs :
+        - id_tarif : BIGINT
+        - trajet_id : BIGINT (FK TRAJET)
+        - type_vehicule_id : BIGINT (FK TYPE_VEHICULE)
+        - prix_place_standard : DECIMAL (ex: 60000.00)
+        - prix_place_premium : DECIMAL (ex: 95000.00)
+        - type_tarif : VARCHAR (NORMAL, FETE, WEEKEND, NUIT, PROMOTIONNEL)
+        - date_debut : DATE
+        - date_fin : DATE (nullable)
+        - multiplicateur : DECIMAL (ex: 1.0, 1.5, 2.0)
+        - actif : BOOLEAN
+        - date_creation : TIMESTAMP
+
+Classe VOYAGE :
+    Attributs :
+        - id_voyage : BIGINT
+        - code_voyage : VARCHAR (ex: "VOY20250118001")
+        - trajet_id : BIGINT (FK TRAJET)
+        - vehicule_id : BIGINT (FK VÉHICULE)
+        - chauffeur_id : BIGINT (FK PERSONNE)
+        - aide_chauffeur_id : BIGINT (FK PERSONNE, nullable)
+        - date_depart : TIMESTAMP
+        - date_arrivee_prevue : TIMESTAMP
+        - date_arrivee_reelle : TIMESTAMP (nullable)
+        - statut : VARCHAR (PLANIFIE, EN_COURS, TERMINE, ANNULE)
+        - prix_par_place : DECIMAL (prix défaut pour le voyage)
+        - remarques : TEXT
+        - date_creation : TIMESTAMP
+        - date_modification : TIMESTAMP
+
+FONCTIONS MÉTIER :
+------------------
+
+Fonction 1 : Récupérer tous les trajets actifs
+    Signature :
+        public List<Trajet> obtenirTousLesTrajets()
+    
+    Retour :
+        List<Trajet> - Liste de tous les trajets ACTIF = TRUE
+    
+    Utilisation :
+        Remplir la liste déroulante "Sélectionner un trajet"
+    
+    Table utilisée :
+        trajet
+    
+    Requête SQL (optionnel) :
+        SELECT * FROM trajet WHERE actif = TRUE ORDER BY code;
+
+
+Fonction 2 : Récupérer les voyages d'un trajet
+    Signature :
+        public List<Voyage> obtenirVoyagesParTrajet(Long trajetId)
+    
+    Paramètres :
+        - trajetId : Long (ID du trajet sélectionné)
+    
+    Retour :
+        List<Voyage> - Liste des voyages pour ce trajet avec statut PLANIFIE
+    
+    Utilisation :
+        Remplir la liste déroulante "Sélectionner un voyage" (dépendante du trajet)
+    
+    Table utilisée :
+        voyage
+    
+    Requête SQL (optionnel) :
+        SELECT v.* FROM voyage v
+        WHERE v.trajet_id = ? AND v.statut = 'PLANIFIE'
+        ORDER BY v.date_depart DESC;
+
+
+Fonction 3 : Récupérer les détails d'un voyage (DTO)
+    Signature :
+        public VoyageDetailDTO obtenirDetailsVoyage(Long voyageId)
+    
+    Paramètres :
+        - voyageId : Long (ID du voyage sélectionné)
+    
+    Retour :
+        VoyageDetailDTO contenant :
+            - id_voyage : BIGINT
+            - code_voyage : VARCHAR
+            - trajet_code : VARCHAR
+            - ville_depart : VARCHAR
+            - ville_arrivee : VARCHAR
+            - distance_km : DECIMAL
+            - duree_estimee_minutes : BIGINT
+            - vehicule_immatriculation : VARCHAR
+            - marque : VARCHAR
+            - modele : VARCHAR
+            - nombre_places_premium : BIGINT
+            - nombre_places_standard : BIGINT
+            - nombre_places_total : BIGINT
+            - statut_vehicule : VARCHAR
+            - date_depart : TIMESTAMP
+            - chauffeur_nom : VARCHAR
+            - chauffeur_prenom : VARCHAR
+            - aide_nom : VARCHAR (nullable)
+            - aide_prenom : VARCHAR (nullable)
+            - prix_place_premium : DECIMAL
+            - prix_place_standard : DECIMAL
+    
+    Utilisation :
+        Afficher tous les détails du voyage dans la section "DÉTAILS DU VOYAGE"
+    
+    Tables utilisées :
+        voyage (JOIN) trajet (JOIN) vehicule (JOIN) personne (chauffeur + aide) (JOIN) tarif
+
+
+Fonction 4 : Calculer le CA Maximum d'un voyage ⭐ (FONCTION PRINCIPALE)
+    Signature :
+        public Map<String, BigDecimal> calculerCAMaxVoyage(Long voyageId)
+    
+    Paramètres :
+        - voyageId : Long (ID du voyage pour lequel calculer le CA max)
+    
+    Retour :
+        Map<String, BigDecimal> contenant :
+            - "caPremium" : BigDecimal (nombre_places_premium × prix_place_premium)
+            - "caStandard" : BigDecimal (nombre_places_standard × prix_place_standard)
+            - "caMax" : BigDecimal (caPremium + caStandard)
+    
+    Exemple d'exécution :
+        Entrée : voyageId = 6 (VOY20250118001)
+        
+        Données du voyage :
+            - Trajet : T004 (Anta -> Fiana)
+            - Véhicule : Bus Mercedes 501-MG-ANT
+            - Nombre places premium : 8
+            - Nombre places standard : 22
+            - Tarif premium : 95 000 Ar
+            - Tarif standard : 60 000 Ar
+        
+        Calcul :
+            caPremium = 8 × 95 000 = 760 000 Ar
+            caStandard = 22 × 60 000 = 1 320 000 Ar
+            caMax = 760 000 + 1 320 000 = 2 080 000 Ar
+        
+        Sortie : {"caPremium": 760000, "caStandard": 1320000, "caMax": 2080000}
+    
+    Utilisation :
+        Clic sur bouton [CALCULER] => Appel cette fonction => Affiche le résultat
+    
+    Logic métier :
+        1. Récupérer le voyage avec ID = voyageId
+        2. Extraire trajet_id et vehicule_id
+        3. Récupérer le véhicule => obtenir nombre_places_premium et nombre_places_standard
+        4. Récupérer le tarif du trajet => obtenir prix_place_premium et prix_place_standard
+        5. Calculer caPremium = nombre_places_premium × prix_place_premium
+        6. Calculer caStandard = nombre_places_standard × prix_place_standard
+        7. Calculer caMax = caPremium + caStandard
+        8. Retourner Map avec {caPremium, caStandard, caMax}
+    
+    Tables utilisées :
+        voyage, vehicule, tarif
+    
+    Requête SQL auxiliaire (optionnel) :
+        -- Récupérer tous les données en une seule requête
+        SELECT 
+            v.id_voyage,
+            v.code_voyage,
+            ve.nombre_places_premium,
+            ve.nombre_places_standard,
+            tar.prix_place_premium,
+            tar.prix_place_standard
+        FROM voyage v
+        JOIN vehicule ve ON v.vehicule_id = ve.id_vehicule
+        JOIN trajet t ON v.trajet_id = t.id_trajet
+        JOIN tarif tar ON t.id_trajet = tar.trajet_id
+        WHERE v.id_voyage = ? AND tar.date_debut <= CURRENT_DATE 
+              AND (tar.date_fin IS NULL OR tar.date_fin >= CURRENT_DATE);
+
+================================================================================
+3. BASE DE DONNÉES
+================================================================================
+
+MCD (Modèle Conceptuel Données) :
+----------------------------------
+
+                    ┌─────────────────┐
+                    │   TRAJET        │
+                    ├─────────────────┤
+                    │ id_trajet (PK)  │
+                    │ code            │
+                    │ ville_depart    │
+                    │ ville_arrivee   │
+                    │ distance_km     │
+                    │ duree_minutes   │
+                    │ actif           │
+                    └────────┬────────┘
+                             │
+                    ┌────────┴─────────┐
+                    │                  │
+              ┌─────▼────────┐   ┌────▼──────────┐
+              │    VOYAGE    │   │    TARIF      │
+              ├──────────────┤   ├───────────────┤
+              │ id_voyage(PK)│   │ id_tarif (PK) │
+              │ code_voyage  │   │ trajet_id(FK) │
+              │ trajet_id(FK)◄───┤ prix_std      │
+              │ vehicule_id◄─┐   │ prix_premium  │
+              │ chauffeur_id │   │ type_tarif    │
+              │ date_depart  │   │ multiplicateur│
+              │ statut       │   │ actif         │
+              │ prix_par_place
+              └────────┬─────┘   └───────────────┘
+                       │
+              ┌────────▼──────────┐
+              │   VÉHICULE        │
+              ├───────────────────┤
+              │ id_vehicule(PK)   │
+              │ immatriculation   │
+              │ type_vehicule_id  │
+              │ marque            │
+              │ modele            │
+              │ annee             │
+              │ nb_places_premium │
+              │ nb_places_standard│
+              │ nombre_places(GEN)│
+              │ statut            │
+              │ actif             │
+              └───────────────────┘
+
+Tables principales :
+    - TRAJET : Donne les trajets disponibles
+    - VOYAGE : Donne une instance spécifique d'un trajet (à une date/heure)
+    - VÉHICULE : Donne les places et capacités du véhicule
+    - TARIF : Donne les prix par place (standard vs premium)
+
+Jointures essentielles :
+    voyage JOIN trajet ON voyage.trajet_id = trajet.id_trajet
+    voyage JOIN vehicule ON voyage.vehicule_id = vehicule.id_vehicule
+    trajet JOIN tarif ON trajet.id_trajet = tarif.trajet_id
+
+VUE SQL (Optionnel) :
+---------------------
+
+Créer une vue pour simplifier la récupération des détails d'un voyage :
+
+    CREATE VIEW v_voyage_ca_max AS
+    SELECT 
+        v.id_voyage,
+        v.code_voyage,
+        v.date_depart,
+        t.code AS trajet_code,
+        t.ville_depart,
+        t.ville_arrivee,
+        t.distance_km,
+        t.duree_estimee_minutes,
+        
+        ve.id_vehicule,
+        ve.immatriculation,
+        ve.marque,
+        ve.modele,
+        ve.annee,
+        ve.nombre_places_premium,
+        ve.nombre_places_standard,
+        ve.nombre_places,
+        ve.statut AS statut_vehicule,
+        
+        p_chauffeur.nom AS chauffeur_nom,
+        p_chauffeur.prenom AS chauffeur_prenom,
+        p_aide.nom AS aide_nom,
+        p_aide.prenom AS aide_prenom,
+        
+        tar.prix_place_premium,
+        tar.prix_place_standard,
+        
+        -- Calculs
+        (ve.nombre_places_premium * tar.prix_place_premium) AS ca_premium_max,
+        (ve.nombre_places_standard * tar.prix_place_standard) AS ca_standard_max,
+        (ve.nombre_places_premium * tar.prix_place_premium + 
+         ve.nombre_places_standard * tar.prix_place_standard) AS ca_max_possible
+    
+    FROM voyage v
+    INNER JOIN trajet t ON v.trajet_id = t.id_trajet
+    INNER JOIN vehicule ve ON v.vehicule_id = ve.id_vehicule
+    INNER JOIN personne p_chauffeur ON v.chauffeur_id = p_chauffeur.id_personne
+    LEFT JOIN personne p_aide ON v.aide_chauffeur_id = p_aide.id_personne
+    INNER JOIN tarif tar ON t.id_trajet = tar.trajet_id 
+                        AND tar.date_debut <= CURRENT_DATE 
+                        AND (tar.date_fin IS NULL OR tar.date_fin >= CURRENT_DATE)
+    WHERE v.statut = 'PLANIFIE'
+    ORDER BY v.date_depart DESC;
+
+    -- Utilisation simple :
+    SELECT * FROM v_voyage_ca_max WHERE id_voyage = 6;
+
+
+FONCTION SQL (Optionnel) :
+---------------------------
+
+Créer une fonction pour calculer directement le CA max :
+
+    CREATE OR REPLACE FUNCTION fn_ca_max_voyage(p_voyage_id BIGINT)
+    RETURNS NUMERIC AS $$
+    DECLARE
+        v_nombre_places_premium BIGINT;
+        v_nombre_places_standard BIGINT;
+        v_prix_premium NUMERIC;
+        v_prix_standard NUMERIC;
+        v_ca_max NUMERIC;
+    BEGIN
+        -- Récupérer les places du véhicule
+        SELECT ve.nombre_places_premium, ve.nombre_places_standard
+        INTO v_nombre_places_premium, v_nombre_places_standard
+        FROM voyage v
+        JOIN vehicule ve ON v.vehicule_id = ve.id_vehicule
+        WHERE v.id_voyage = p_voyage_id;
+        
+        -- Récupérer les tarifs du trajet
+        SELECT tar.prix_place_premium, tar.prix_place_standard
+        INTO v_prix_premium, v_prix_standard
+        FROM voyage v
+        JOIN trajet t ON v.trajet_id = t.id_trajet
+        JOIN tarif tar ON t.id_trajet = tar.trajet_id
+        WHERE v.id_voyage = p_voyage_id
+        LIMIT 1;
+        
+        -- Validation
+        IF v_nombre_places_premium IS NULL OR v_prix_premium IS NULL THEN
+            RAISE EXCEPTION 'Données incomplètes pour le voyage %', p_voyage_id;
+        END IF;
+        
+        -- Calcul du CA max
+        v_ca_max := (v_nombre_places_premium * v_prix_premium) + 
+                    (v_nombre_places_standard * v_prix_standard);
+        
+        RETURN v_ca_max;
+    END;
+    $$ LANGUAGE plpgsql;
+
+    -- Utilisation simple :
+    SELECT fn_ca_max_voyage(6);  -- Retourne : 2080000
+
+
+Spécifications des vues/tables :
+---------------------------------
+
+TABLE VOYAGE (déjà existante) :
+    Nom : voyage
+    Colonne clé : id_voyage (PRIMARY KEY)
+    Colonnes critiques :
+        - trajet_id (FK vers trajet) : pour identifier le trajet
+        - vehicule_id (FK vers vehicule) : pour obtenir les places
+        - chauffeur_id (FK vers personne) : pour le nom du chauffeur
+        - date_depart (TIMESTAMP) : pour identifier le voyage précis
+        - statut (VARCHAR) : pour filtrer seulement les voyages PLANIFIE
+
+TABLE VÉHICULE (déjà existante) :
+    Nom : vehicule
+    Colonne clé : id_vehicule (PRIMARY KEY)
+    Colonnes critiques :
+        - nombre_places_premium (BIGINT) : nombre de places premium
+        - nombre_places_standard (BIGINT) : nombre de places standard
+        - immatriculation (VARCHAR) : pour identifier le véhicule
+
+TABLE TRAJET (déjà existante) :
+    Nom : trajet
+    Colonne clé : id_trajet (PRIMARY KEY)
+    Colonnes critiques :
+        - code (VARCHAR) : pour identifier le trajet (T001, T002, etc.)
+        - ville_depart (VARCHAR) : point de départ
+        - ville_arrivee (VARCHAR) : point d'arrivée
+        - distance_km (DECIMAL) : distance
+
+TABLE TARIF (déjà existante) :
+    Nom : tarif
+    Colonne clé : id_tarif (PRIMARY KEY)
+    Colonnes critiques :
+        - trajet_id (FK vers trajet) : pour lier au trajet
+        - prix_place_standard (DECIMAL) : prix d'une place standard
+        - prix_place_premium (DECIMAL) : prix d'une place premium
+        - date_debut et date_fin : pour les tarifs actifs
+
+================================================================================
+RÉSUMÉ TECHNOLOGIQUE :
+================================================================================
+
+COUCHE PRÉSENTATION (AFFICHAGE) :
+    Technology : Thymeleaf / HTML5
+    Fichier : reservations/ca-max-voyage.html
+    Controllers :
+        - GET /voyages/ca-max → Affiche le formulaire
+        - GET /api/trajets → Retourne liste des trajets (JSON)
+        - GET /api/voyages/par-trajet?trajetId=X → Retourne voyages du trajet (JSON)
+        - GET /api/voyages/details?voyageId=X → Retourne détails voyage (JSON)
+        - POST /api/voyages/calculer-ca-max → Calcule et retourne CA max (JSON)
+
+COUCHE MÉTIER (MÉTIER) :
+    Technology : Spring Service
+    Classes :
+        - VoyageService.java
+        - TajetService.java
+        - VehiculeService.java
+        - TarifService.java
+    Fonctions principales :
+        - obtenirTousLesTrajets()
+        - obtenirVoyagesParTrajet(Long trajetId)
+        - obtenirDetailsVoyage(Long voyageId)
+        - calculerCAMaxVoyage(Long voyageId)
+
+COUCHE DONNÉES (BASE) :
+    Technology : PostgreSQL 15.3
+    Vues :
+        - v_voyage_ca_max (pour détails complets)
+    Fonctions SQL :
+        - fn_ca_max_voyage(p_voyage_id) (calcul optimisé DB)
+    Repositories :
+        - VoyageRepository.java
+        - TajetRepository.java
+        - VehiculeRepository.java
+        - TarifRepository.java
+
+================================================================================
+À IMPLÉMENTER (CHECKLIST) :
+================================================================================
+
+AFFICHAGE :
+    ☐ Créer la page HTML : reservations/ca-max-voyage.html
+    ☐ Ajouter les 2 listes déroulantes (Trajet + Voyage)
+    ☐ Ajouter la section "DÉTAILS DU VOYAGE"
+    ☐ Ajouter la section "PLACES & TARIFICATION"
+    ☐ Ajouter la section "RÉSULTAT FINAL" avec affichage CA max
+    ☐ Ajouter CSS pour mise en forme
+    ☐ Ajouter JavaScript pour chargement AJAX dépendant
+
+MÉTIER :
+    ☐ Ajouter méthode : obtenirTousLesTrajets() dans TajetService
+    ☐ Ajouter méthode : obtenirVoyagesParTrajet(Long trajetId) dans VoyageService
+    ☐ Ajouter DTO : VoyageDetailDTO.java
+    ☐ Ajouter méthode : obtenirDetailsVoyage(Long voyageId) dans VoyageService
+    ☐ Ajouter méthode : calculerCAMaxVoyage(Long voyageId) dans VoyageService
+    ☐ Créer classe : CAMaxResultDTO.java
+
+CONTRÔLEUR :
+    ☐ Ajouter endpoint GET : /voyages/ca-max
+    ☐ Ajouter endpoint REST GET : /api/trajets
+    ☐ Ajouter endpoint REST GET : /api/voyages/par-trajet
+    ☐ Ajouter endpoint REST GET : /api/voyages/details
+    ☐ Ajouter endpoint REST POST : /api/voyages/calculer-ca-max
+
+BASE DE DONNÉES :
+    ☐ Créer la vue : v_voyage_ca_max
+    ☐ Créer la fonction SQL : fn_ca_max_voyage()
+    ☐ Vérifier que les tables voyage, vehicule, trajet, tarif sont à jour
+    ☐ Vérifier les données de test
+
+TESTS :
+    ☐ Tester le chargement de la page
+    ☐ Tester la sélection d'un trajet
+    ☐ Tester le chargement dynamique des voyages
+    ☐ Tester l'affichage des détails du voyage
+    ☐ Tester le calcul du CA max
+    ☐ Vérifier les calculs manuellement :
+        - Bus 501-MG-ANT (8 premium + 22 standard) sur T004
+        - Trajet Anta-Fiana : Premium 95K, Standard 60K
+        - Résultat attendu : (8×95K) + (22×60K) = 760K + 1320K = 2080K ✓
+
+================================================================================

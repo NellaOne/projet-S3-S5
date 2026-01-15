@@ -97,14 +97,14 @@ public class ReservationService {
         reservation.setDateReservation(LocalDateTime.now());
         
         // 5. Calculer montants (PREMIUM + STANDARD séparément)
-        Tarif tarif = trajetRepository.findTarifByTrajetId(voyage.getTrajet().getId());
+        Tarif tarif = trajetRepository.findTarifByTrajetId(voyage.getTrajet().getId(), voyage.getVehicule().getTypeVehicule().getId());
         if (tarif == null) {
-            throw new RuntimeException("Tarif non trouvé pour ce trajet");
+            throw new RuntimeException("Tarif non trouvé pour ce trajet et ce type de véhicule");
         }
-        
+
         BigDecimal montantPremium = tarif.getPrixPlacePremium().multiply(BigDecimal.valueOf(nombrePlacesPremium));
         BigDecimal montantStandard = tarif.getPrixPlaceStandard().multiply(BigDecimal.valueOf(nombrePlacesStandard));
-        
+
         reservation.setMontantTotalPremium(montantPremium);
         reservation.setMontantTotalStandard(montantStandard);
         reservation.setMontantPaye(BigDecimal.ZERO);

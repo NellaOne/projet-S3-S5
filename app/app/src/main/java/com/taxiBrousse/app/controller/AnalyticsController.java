@@ -31,6 +31,7 @@ public class AnalyticsController {
     @Autowired private VoyageRepository voyageRepo;
     @Autowired private TrajetRepository trajetRepo;
     @Autowired private ReservationRepository reservationRepo;
+    @Autowired private com.taxiBrousse.app.service.VoyageService voyageService;
     
     // ============================================
     // DASHBOARD PRINCIPAL
@@ -214,6 +215,15 @@ public class AnalyticsController {
             ? ca.divide(BigDecimal.valueOf(placesVendues), 2, java.math.RoundingMode.HALF_UP)
             : BigDecimal.ZERO;
         
+        // Calcul CA max - gérer les cas où le tarif n'existe pas
+        BigDecimal caMax = BigDecimal.ZERO;
+        try {
+            caMax = voyageService.calculerCaMaxVoyage(voyage.getId());
+        } catch (RuntimeException e) {
+            // Tarif non trouvé - utiliser 0 par défaut pour ne pas bloquer le dashboard
+            System.err.println("Tarif non trouvé pour voyage " + voyage.getId() + ": " + e.getMessage());
+            caMax = BigDecimal.ZERO;
+        }
         return new VoyageAnalyticsDTO(
             voyage.getId(),
             voyage.getCodeVoyage(),
@@ -224,16 +234,23 @@ public class AnalyticsController {
             voyage.getTrajet().getVilleArrivee(),
             voyage.getTrajet().getDistanceKm(),
             voyage.getVehicule().getImmatriculation(),
+            Long.valueOf(voyage.getVehicule().getNombrePlacesPremium()),
+            Long.valueOf(voyage.getVehicule().getNombrePlacesStandard()),
             Long.valueOf(voyage.getVehicule().getNombrePlaces()),
             voyage.getChauffeur().getNom(),
             voyage.getChauffeur().getPrenom(),
             voyage.getPrixParPlace(),
             ca,
+            BigDecimal.ZERO, // caPremium (à calculer si besoin)
+            BigDecimal.ZERO, // caStandard (à calculer si besoin)
             montantTotal,
             reservations.size(),
+            0, // placesPremiumVendues
+            0, // placesStandardVendues
             placesVendues,
             tauxOccupation,
-            caParPlace
+            caParPlace,
+            caMax
         );
     }
     

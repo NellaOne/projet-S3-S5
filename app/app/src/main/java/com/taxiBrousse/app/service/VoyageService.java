@@ -26,6 +26,26 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class VoyageService {
+        /**
+         * Calcule le CA maximum pour un voyage (places premium + standard)
+         * @param voyageId ID du voyage
+         * @return CA max
+         */
+        public BigDecimal calculerCaMaxVoyage(Long voyageId) {
+            Voyage voyage = voyageRepo.findById(voyageId)
+                .orElseThrow(() -> new RuntimeException("Voyage non trouvé"));
+            Vehicule vehicule = voyage.getVehicule();
+            Trajet trajet = voyage.getTrajet();
+            Tarif tarif = trajetRepo.findTarifByTrajetId(trajet.getId(), vehicule.getTypeVehicule().getId());
+            if (tarif == null) {
+                throw new RuntimeException("Tarif non trouvé pour ce trajet et ce type de véhicule");
+            }
+            int nbPremium = vehicule.getNombrePlacesPremium();
+            int nbStandard = vehicule.getNombrePlacesStandard();
+            BigDecimal caPremium = tarif.getPrixPlacePremium().multiply(BigDecimal.valueOf(nbPremium));
+            BigDecimal caStandard = tarif.getPrixPlaceStandard().multiply(BigDecimal.valueOf(nbStandard));
+            return caPremium.add(caStandard);
+        }
     @Autowired private VoyageRepository voyageRepo;
     @Autowired private VehiculeRepository vehiculeRepo;
     @Autowired private ReservationRepository reservationRepo;
@@ -221,23 +241,24 @@ public class VoyageService {
     public Map<String, BigDecimal> calculerMontantsReservation(Long voyageId, Integer nombrePlacesPremium, Integer nombrePlacesStandard) {
         Voyage voyage = voyageRepo.findById(voyageId)
             .orElseThrow(() -> new RuntimeException("Voyage non trouvé"));
-        
+
         Trajet trajet = voyage.getTrajet();
-        Tarif tarif = trajetRepo.findTarifByTrajetId(trajet.getId());
-        
+        Vehicule vehicule = voyage.getVehicule();
+        Tarif tarif = trajetRepo.findTarifByTrajetId(trajet.getId(), vehicule.getTypeVehicule().getId());
+
         if (tarif == null) {
-            throw new RuntimeException("Tarif non trouvé pour ce trajet");
+            throw new RuntimeException("Tarif non trouvé pour ce trajet et ce type de véhicule");
         }
-        
+
         BigDecimal montantPremium = tarif.getPrixPlacePremium().multiply(BigDecimal.valueOf(nombrePlacesPremium));
         BigDecimal montantStandard = tarif.getPrixPlaceStandard().multiply(BigDecimal.valueOf(nombrePlacesStandard));
         BigDecimal montantTotal = montantPremium.add(montantStandard);
-        
+
         Map<String, BigDecimal> result = new HashMap<>();
         result.put("montantPremium", montantPremium);
         result.put("montantStandard", montantStandard);
         result.put("montantTotal", montantTotal);
-        
+
         return result;
     }
     
