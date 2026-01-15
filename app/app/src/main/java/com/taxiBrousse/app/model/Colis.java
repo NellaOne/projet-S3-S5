@@ -20,6 +20,7 @@ import lombok.NoArgsConstructor;
 @Data @NoArgsConstructor @AllArgsConstructor
 public class Colis {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_colis")
     private Long id;
     
     @Column(nullable = false, unique = true, length = 50)

@@ -1,54 +1,165 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/common :: head('Nouvelle Réservation')}"></head>
+<head th:replace="~{fragments/common :: head('Enregistrement de Réservation')}"></head>
 <body>
     <div th:replace="~{fragments/common :: navbar}"></div>
     
     <div class="container-fluid px-4">
         <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-plus-circle"></i> Créer une Nouvelle Réservation
+            <div class="col-lg-10">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-ticket-alt"></i> Enregistrement de Réservation
+                        </h4>
                     </div>
                     <div class="card-body">
-                        <form th:action="@{/reservations/creer}" method="post">
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Client</label>
-                                    <select name="clientId" class="form-select" required>
-                                        <option value="">-- Sélectionner --</option>
-                                        <option th:each="c : ${clients}" th:value="${c.id}" th:text="${c.nom} + ' ' + ${c.prenom}"></option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Nombre de Places</label>
-                                    <input type="number" name="nombrePlaces" class="form-control" min="1" value="1" required>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Départ</label>
-                                    <select name="villeDepart" class="form-select" required>
-                                        <option th:each="v : ${villes}" th:value="${v}" th:text="${v}" th:selected="${villeDepartPrefill == v}"></option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Arrivée</label>
-                                    <select name="villeArrivee" class="form-select" required>
-                                        <option th:each="v : ${villes}" th:value="${v}" th:text="${v}" th:selected="${villeArriveePrefill == v}"></option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label">Date</label>
-                                    <input type="date" name="date" class="form-control" th:value="${datePrefill}" required>
-                                </div>
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label">Heure</label>
-                                    <input type="time" name="heure" class="form-control" th:value="${heurePrefill}" required>
+                        <!-- ============================================
+                        ÉTAPE 1 : CHOIX DU TRAJET (1ère liste déroulante)
+                        ============================================ -->
+                        <form id="reservationForm" method="post" th:action="@{/reservations/creer}">
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="selectTrajet" class="form-label fw-bold">
+                                            <i class="fas fa-map-pin"></i> 1. Sélectionner votre trajet
+                                        </label>
+                                        <select id="selectTrajet" name="trajetId" class="form-select form-select-lg" required>
+                                            <option value="">-- Choisir un trajet --</option>
+                                            <option th:each="trajet : ${trajets}" 
+                                                    th:value="${trajet.id}"
+                                                    th:text="${trajet.villeDepart} + ' → ' + ${trajet.villeArrivee} + ' (' + ${trajet.code} + ')'">
+                                            </option>
+                                        </select>
+                                        <small class="form-text text-muted">
+                                            Choisissez votre point de départ et d'arrivée
+                                        </small>
+                                    </div>
                                 </div>
                             </div>
-                            <button type="submit" class="btn btn-primary">Réserver</button>
+                            
+                            <!-- ============================================
+                            ÉTAPE 2 : CHOIX DE LA DATE (2ème liste déroulante - DYNAMIQUE)
+                            ============================================ -->
+                            <div class="row mb-4" id="etape2" style="display: none;">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="selectDate" class="form-label fw-bold">
+                                            <i class="fas fa-calendar"></i> 2. Sélectionner votre date
+                                        </label>
+                                        <select id="selectDate" name="date" class="form-select form-select-lg" required disabled>
+                                            <option value="">-- Chargement des dates disponibles... --</option>
+                                        </select>
+                                        <small class="form-text text-muted">
+                                            Les dates affichées ont au moins un voyage disponible
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- ============================================
+                            ÉTAPE 3 : CHOIX DE L'HEURE/VOYAGE (3ème liste déroulante - DYNAMIQUE)
+                            ============================================ -->
+                            <div class="row mb-4" id="etape3" style="display: none;">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="selectHeures" class="form-label fw-bold">
+                                            <i class="fas fa-clock"></i> 3. Sélectionner votre heure/voyage
+                                        </label>
+                                        <select id="selectHeures" name="voyageId" class="form-select form-select-lg" required disabled>
+                                            <option value="">-- Chargement des heures disponibles... --</option>
+                                        </select>
+                                        <small class="form-text text-muted">
+                                            Chaque option affiche l'heure, places disponibles et prix
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- ============================================
+                            DÉTAIL DU VOYAGE SÉLECTIONNÉ (affichage informatif)
+                            ============================================ -->
+                            <div class="alert alert-info" id="voyageDetail" style="display: none;">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <strong>Véhicule:</strong> <span id="detailVehicule"></span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Chauffeur:</strong> <span id="detailChauffeur"></span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Places disponibles:</strong> <span id="detailPlaces" class="badge bg-success"></span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Prix unitaire:</strong> <span id="detailPrix" class="badge bg-primary"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- ============================================
+                            DÉTAILS DE LA RÉSERVATION
+                            ============================================ -->
+                            <hr class="my-4">
+                            
+                            <div class="row mb-3" id="etape4" style="display: none;">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="selectClient" class="form-label fw-bold">
+                                            <i class="fas fa-user"></i> Client
+                                        </label>
+                                        <select id="selectClient" name="clientId" class="form-select" required>
+                                            <option value="">-- Sélectionner un client --</option>
+                                            <option th:each="c : ${clients}" 
+                                                    th:value="${c.id}"
+                                                    th:text="${c.nom} + ' ' + ${c.prenom}">
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="inputNombrePlaces" class="form-label fw-bold">
+                                            <i class="fas fa-chair"></i> Nombre de places
+                                        </label>
+                                        <input type="number" id="inputNombrePlaces" name="nombrePlaces" 
+                                               class="form-control" min="1" value="1" required>
+                                        <small id="placesWarning" class="form-text text-danger" style="display: none;"></small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- ============================================
+                            RÉSUMÉ & MONTANT
+                            ============================================ -->
+                            <div class="alert alert-light border" id="resumeReservation" style="display: none;">
+                                <h5>Résumé de votre réservation</h5>
+                                <table class="table table-sm mb-0">
+                                    <tr>
+                                        <td><strong>Montant unitaire:</strong></td>
+                                        <td><span id="resumePrix"></span> MGA</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Nombre de places:</strong></td>
+                                        <td><span id="resumePlaces"></span></td>
+                                    </tr>
+                                    <tr class="table-active">
+                                        <td><strong>Montant total:</strong></td>
+                                        <td><strong><span id="resumeMontantTotal" class="text-success"></span> MGA</strong></td>
+                                    </tr>
+                                </table>
+                            </div>
+                            
+                            <!-- ============================================
+                            BOUTONS ACTION
+                            ============================================ -->
+                            <div class="d-flex gap-2 mt-4">
+                                <button type="submit" id="submitBtn" class="btn btn-success btn-lg" style="display: none;">
+                                    <i class="fas fa-check-circle"></i> Confirmer la réservation
+                                </button>
+                                <a href="/reservations" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Annuler
+                                </a>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -58,5 +169,182 @@
     
     <div th:replace="~{fragments/common :: footer}"></div>
     <div th:replace="~{fragments/common :: scripts}"></div>
+    
+    <!-- ============================================
+    JAVASCRIPT : Logique UI/UX dynamique
+    ============================================ -->
+    <script>
+        const selectTrajet = document.getElementById('selectTrajet');
+        const selectDate = document.getElementById('selectDate');
+        const selectHeures = document.getElementById('selectHeures');
+        const selectClient = document.getElementById('selectClient');
+        const inputNombrePlaces = document.getElementById('inputNombrePlaces');
+        
+        const etape2 = document.getElementById('etape2');
+        const etape3 = document.getElementById('etape3');
+        const etape4 = document.getElementById('etape4');
+        const voyageDetail = document.getElementById('voyageDetail');
+        const resumeReservation = document.getElementById('resumeReservation');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        // ============================================
+        // ÉTAPE 1 : Changement du trajet
+        // ============================================
+        selectTrajet.addEventListener('change', async function() {
+            const trajetId = this.value;
+            
+            if (!trajetId) {
+                // Masquer les étapes suivantes
+                etape2.style.display = 'none';
+                etape3.style.display = 'none';
+                etape4.style.display = 'none';
+                submitBtn.style.display = 'none';
+                return;
+            }
+            
+            // Afficher étape 2
+            etape2.style.display = 'block';
+            
+            // Charger les dates disponibles
+            try {
+                const response = await fetch(`/reservations/api/dates/${trajetId}`);
+                const dates = await response.json();
+                
+                selectDate.innerHTML = '<option value="">-- Sélectionner une date --</option>';
+                dates.forEach(date => {
+                    const option = document.createElement('option');
+                    option.value = date.date;
+                    option.textContent = date.displayLabel;
+                    selectDate.appendChild(option);
+                });
+                selectDate.disabled = false;
+                
+                // Réinitialiser les étapes suivantes
+                etape3.style.display = 'none';
+                etape4.style.display = 'none';
+                submitBtn.style.display = 'none';
+            } catch (error) {
+                console.error('Erreur lors du chargement des dates:', error);
+                alert('Erreur lors du chargement des dates');
+            }
+        });
+        
+        // ============================================
+        // ÉTAPE 2 : Changement de la date
+        // ============================================
+        selectDate.addEventListener('change', async function() {
+            const trajetId = selectTrajet.value;
+            const date = this.value;
+            
+            if (!date) {
+                etape3.style.display = 'none';
+                etape4.style.display = 'none';
+                submitBtn.style.display = 'none';
+                return;
+            }
+            
+            // Afficher étape 3
+            etape3.style.display = 'block';
+            
+            // Charger les heures disponibles
+            try {
+                const response = await fetch(`/reservations/api/heures/${trajetId}/${date}`);
+                const heures = await response.json();
+                
+                selectHeures.innerHTML = '<option value="">-- Sélectionner une heure --</option>';
+                heures.forEach(heure => {
+                    const option = document.createElement('option');
+                    option.value = heure.id;
+                    option.textContent = heure.label;
+                    option.dataset.places = heure.placesDisponibles;
+                    option.dataset.prix = heure.prixParPlace;
+                    option.dataset.chauffeur = heure.chauffeurNom;
+                    option.dataset.vehicule = heure.vehiculeImmatriculation;
+                    selectHeures.appendChild(option);
+                });
+                selectHeures.disabled = false;
+                
+                // Réinitialiser étape 4
+                etape4.style.display = 'none';
+                submitBtn.style.display = 'none';
+            } catch (error) {
+                console.error('Erreur lors du chargement des heures:', error);
+                alert('Erreur lors du chargement des heures');
+            }
+        });
+        
+        // ============================================
+        // ÉTAPE 3 : Changement de l'heure/voyage
+        // ============================================
+        selectHeures.addEventListener('change', function() {
+            if (!this.value) {
+                etape4.style.display = 'none';
+                voyageDetail.style.display = 'none';
+                submitBtn.style.display = 'none';
+                return;
+            }
+            
+            const option = this.options[this.selectedIndex];
+            const places = parseInt(option.dataset.places);
+            const prix = parseFloat(option.dataset.prix);
+            const chauffeur = option.dataset.chauffeur;
+            const vehicule = option.dataset.vehicule;
+            
+            // Afficher détail du voyage
+            document.getElementById('detailPlaces').textContent = places;
+            document.getElementById('detailPrix').textContent = prix.toLocaleString('fr-FR', { minimumFractionDigits: 0 }) + ' MGA';
+            document.getElementById('detailChauffeur').textContent = chauffeur;
+            document.getElementById('detailVehicule').textContent = vehicule;
+            voyageDetail.style.display = 'block';
+            
+            // Afficher étape 4
+            etape4.style.display = 'block';
+            
+            // Afficher le bouton
+            submitBtn.style.display = 'inline-block';
+            
+            // Mettre à jour le résumé
+            updateResume();
+        });
+        
+        // ============================================
+        // VALIDATIONS EN TEMPS RÉEL
+        // ============================================
+        inputNombrePlaces.addEventListener('change', function() {
+            const nombrePlaces = parseInt(this.value) || 0;
+            const option = selectHeures.options[selectHeures.selectedIndex];
+            const places = parseInt(option.dataset.places) || 0;
+            
+            const warning = document.getElementById('placesWarning');
+            if (nombrePlaces > places) {
+                warning.textContent = `Attention: seulement ${places} place(s) disponible(s)`;
+                warning.style.display = 'block';
+                submitBtn.disabled = true;
+            } else {
+                warning.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+            
+            updateResume();
+        });
+        
+        // ============================================
+        // MISE À JOUR DU RÉSUMÉ
+        // ============================================
+        function updateResume() {
+            const option = selectHeures.options[selectHeures.selectedIndex];
+            if (!option.value) return;
+            
+            const prix = parseFloat(option.dataset.prix);
+            const nombrePlaces = parseInt(inputNombrePlaces.value) || 1;
+            const montantTotal = prix * nombrePlaces;
+            
+            document.getElementById('resumePrix').textContent = prix.toLocaleString('fr-FR', { minimumFractionDigits: 0 });
+            document.getElementById('resumePlaces').textContent = nombrePlaces;
+            document.getElementById('resumeMontantTotal').textContent = montantTotal.toLocaleString('fr-FR', { minimumFractionDigits: 0 });
+            
+            resumeReservation.style.display = 'block';
+        }
+    </script>
 </body>
 </html>

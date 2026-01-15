@@ -17,6 +17,7 @@ import lombok.NoArgsConstructor;
 @Data @NoArgsConstructor @AllArgsConstructor
 public class Trajet {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_trajet")
     private Long id;
     
     @Column(nullable = false, unique = true, length = 50)

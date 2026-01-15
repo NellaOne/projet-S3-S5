@@ -1,0 +1,4 @@
+cd c:\Users\ORNELLA\Documents\S5\Baovola\090125\projet-S3-S5\Base
+psql -U postgres -f reinit.sql
+psql -U postgres -d taxi_brousse -f table.sql
+psql -U postgres -d taxi_brousse -f data.sql

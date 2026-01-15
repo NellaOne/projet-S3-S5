@@ -20,6 +20,7 @@ import lombok.NoArgsConstructor;
 @Data @NoArgsConstructor @AllArgsConstructor
 public class ListeAttente {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_liste_attente")
     private Long id;
     
     @ManyToOne

@@ -16,6 +16,9 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findByVoyageId(Long voyageId);
     List<Reservation> findByStatut(String statut);
     
+    // ✅ NOUVELLE : Pour calculer les places réservées EN TEMPS RÉEL
+    List<Reservation> findByVoyageIdAndStatutNot(Long voyageId, String statut);
+    
     @Query("SELECT SUM(r.montantTotal) FROM Reservation r WHERE r.dateReservation BETWEEN ?1 AND ?2 AND r.statut != 'ANNULE'")
     BigDecimal calculateRecetteByPeriod(LocalDateTime start, LocalDateTime end);
 }

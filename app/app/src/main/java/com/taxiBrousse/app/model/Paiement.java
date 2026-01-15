@@ -19,6 +19,7 @@ import lombok.NoArgsConstructor;
 @Data @NoArgsConstructor @AllArgsConstructor
 public class Paiement {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_paiement")
     private Long id;
     
     @Column(nullable = false, unique = true, length = 50)

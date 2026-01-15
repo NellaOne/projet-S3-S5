@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 @Data @NoArgsConstructor @AllArgsConstructor
 public class Garage {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_garage")
     private Long id;
     
     @Column(nullable = false, length = 200)

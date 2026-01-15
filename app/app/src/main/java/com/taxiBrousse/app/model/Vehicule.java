@@ -5,11 +5,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,6 +19,7 @@ import lombok.NoArgsConstructor;
 @Data @NoArgsConstructor @AllArgsConstructor
 public class Vehicule {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_vehicule")
     private Long id;
     
     @Column(nullable = false, unique = true, length = 50)
@@ -28,6 +29,10 @@ public class Vehicule {
     @JoinColumn(name = "type_vehicule_id")
     private TypeVehicule typeVehicule;
     
+    @ManyToOne
+    @JoinColumn(name = "garage_id")
+    private Garage garage;
+    
     private String marque;
     private String modele;
     private Integer annee;
@@ -35,6 +40,9 @@ public class Vehicule {
     
     @Column(nullable = false)
     private Integer nombrePlaces;
+    
+    @Column(length = 50, unique = true)
+    private String numeroChassis;
     
     @Column(length = 50)
     private String statut = "DISPONIBLE"; // DISPONIBLE, EN_SERVICE, EN_MAINTENANCE, HORS_SERVICE

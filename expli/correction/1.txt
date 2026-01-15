@@ -1,0 +1,28 @@
+on doit savoir quels sont tous les entités concerné
+par exemple si le theme de mon projet etait le cinéma, on doit appliquer les entités concerné par le cinéma genre comme dans la vrai vie 
+de la vie réelle et quotidienne, on doit connaitre ce qui se passe derrière dans le metier 
+on doit savoir des notions comme si par exemple on prends exemple avec le thème cinéma :
+-cinema a des salles (a plusieurs salle differents)
+-chaque salle a sa capacité (combien de personne dans la salle)
+-qu'est ce qu'on regarde au cinéma => film 
+-y'a donc aussi notion avec film
+-la chose qui est au milieu => session_film <= et c'est ce que la plupart des etudiants n'ont pas reussi à trouver 
+-par exemple si on organise le film qui passe dans le cinéma, on doit placer la date, l'heure, la salle, le film  et dans une autre salle un autre film
+-on est pas encore dans le combien de personne regarde le film mais la sesison doit d'abord exister pour qu'une personne puisse regarder un film à une telle date et telle heure
+
+c'est la meme chose si le theme de mon projet etait Compagnie aérienne :
+-y'a notion d'avion
+-avion est plusieurs, chaque avion a sa capacité (le nombre de personne qu'il contient)
+-notion de trajet (l'avion va ou ? depart Antananarivo, arrivée Nosy Be)
+-voyage(milieu) => on organise dans cette date, y'a cet avion qui part de 8h d'Antananarivo pour aller à Sainte Marie et c'est ce vol que les etudiants n'ont pas reussi à trouver
+car quand on voyage on doit considérer quel vol est prise ? celui qui part a 10h demain ou à 3h du matin ?
+
+pareil avec le projet avec le thème taxi-brousse(qui est le mien du coup) :
+-y'a notion de taxi-brousse(voiture)
+-chaque taxi-brousse a sa capacité (combien de personne dans le taxi-brousse)
+-notion de trajet (le taxi-brousse va ou ? depart Antananarivo, vers ...., chacun a son heure de depart
+-et si par exemple on va : on a voyage a telle date a tel heure et va vers avec cette voiture pour aller à...
+
+donc le juste milieu c'est-à-dire le pivot de la conception de ces projets en général => on devrait l'implementer et l'avoir comme dans l'explication de notre professeur là
+
+

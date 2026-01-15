@@ -20,6 +20,7 @@ import lombok.NoArgsConstructor;
 @Data @NoArgsConstructor @AllArgsConstructor
 public class Voyage {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_voyage")
     private Long id;
     
     @Column(nullable = false, unique = true, length = 50)
@@ -50,7 +51,10 @@ public class Voyage {
     @Column(length = 50)
     private String statut = "PLANIFIE"; // PLANIFIE, EN_COURS, TERMINE, ANNULE
     
-    private Integer nombrePlacesDisponibles;
+    // ✅ SUPPRIMÉ : nombrePlacesDisponibles est calculé via VUE SQL
+    // private Integer nombrePlacesDisponibles;
+    
+    @Column(nullable = false)
     private BigDecimal prixParPlace;
     
     @Column(columnDefinition = "TEXT")

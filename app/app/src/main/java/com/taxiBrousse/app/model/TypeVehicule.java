@@ -1,7 +1,6 @@
 package com.taxiBrousse.app.model;
 
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -17,15 +16,17 @@ import lombok.NoArgsConstructor;
 @Data @NoArgsConstructor @AllArgsConstructor
 public class TypeVehicule {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_type_vehicule")
     private Long id;
+    
+    @Column(nullable = false, unique = true, length = 20)
+    private String code;
     
     @Column(nullable = false, unique = true, length = 100)
     private String nom;
     
     @Column(nullable = false)
-    private Integer capacitePassagers;
-    
-    private BigDecimal capaciteBagages;
+    private Integer capaciteStandard;
     
     @Column(columnDefinition = "TEXT")
     private String description;

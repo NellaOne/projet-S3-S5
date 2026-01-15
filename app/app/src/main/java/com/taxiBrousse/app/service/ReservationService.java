@@ -3,75 +3,123 @@ package com.taxiBrousse.app.service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.taxiBrousse.app.model.ListeAttente;
-import com.taxiBrousse.app.model.Paiement;
-import com.taxiBrousse.app.model.Personne;
-import com.taxiBrousse.app.model.Reservation;
-import com.taxiBrousse.app.model.Trajet;
-import com.taxiBrousse.app.model.Voyage;
-import com.taxiBrousse.app.repositories.ListeAttenteRepository;
-import com.taxiBrousse.app.repositories.PaiementRepository;
-import com.taxiBrousse.app.repositories.ReservationRepository;
-import com.taxiBrousse.app.repositories.VoyageRepository;
-import com.taxiBrousse.app.repositories.TrajetRepository;
-import com.taxiBrousse.app.repositories.PersonneRepository;
+import com.taxiBrousse.app.model.*;
+import com.taxiBrousse.app.repositories.*;
 
-
-
+/**
+ * ReservationService - Gestion des réservations
+ * 
+ * Responsabilités :
+ * - Créer/modifier/annuler réservations
+ * - Vérifier disponibilité EN TEMPS RÉEL (via VoyageService)
+ * - Gérer paiements et notifications
+ * - Respecter les contraintes métier
+ */
 @Service
 @Transactional
 public class ReservationService {
     @Autowired private ReservationRepository reservationRepository;
     @Autowired private VoyageRepository voyageRepository;
+    @Autowired private VoyageService voyageService;
     @Autowired private PaiementRepository paiementRepo;
     @Autowired private ListeAttenteRepository listeAttenteRepo;
     @Autowired private TrajetRepository trajetRepository;
     @Autowired private PersonneRepository personneRepository;
     
-    public Reservation creerReservation(Reservation reservation) {
-        Voyage voyage = reservation.getVoyage();
+    // ============================================
+    // CRÉER RÉSERVATION (Logique métier complète)
+    // ============================================
+    
+    /**
+     * Crée une réservation sur une session/voyage existant
+     * 
+     * @param voyageId ID du voyage (session) sélectionné
+     * @param clientId ID du client
+     * @param nombrePlaces Nombre de places à réserver
+     * @return Réservation créée
+     */
+    public Reservation creerReservation(Long voyageId, Long clientId, Integer nombrePlaces) {
+        // 1. Récupérer le voyage (session)
+        Voyage voyage = voyageRepository.findById(voyageId)
+            .orElseThrow(() -> new RuntimeException("Voyage non trouvé"));
         
-        // Vérifier disponibilité
-        if (voyage.getNombrePlacesDisponibles() < reservation.getNombrePlaces()) {
-            throw new RuntimeException("Pas assez de places disponibles");
+        // 2. Récupérer le client
+        Personne client = personneRepository.findById(clientId)
+            .orElseThrow(() -> new RuntimeException("Client non trouvé"));
+        
+        // 3. Vérifier disponibilité EN TEMPS RÉEL
+        // (utiliser ReservationRepository pour compter les réservations non-annulées)
+        List<Reservation> reservationsActuelles = reservationRepository
+            .findByVoyageIdAndStatutNot(voyageId, "ANNULE");
+        
+        int placesReservees = reservationsActuelles.stream()
+            .mapToInt(Reservation::getNombrePlaces)
+            .sum();
+        
+        int capaciteTotale = voyage.getVehicule().getNombrePlaces();
+        int placesDisponibles = capaciteTotale - placesReservees;
+        
+        if (nombrePlaces > placesDisponibles) {
+            throw new RuntimeException(
+                String.format("Pas assez de places. Disponibles: %d, Demandées: %d", 
+                    placesDisponibles, nombrePlaces)
+            );
         }
         
-        // Générer code
-        reservation.setCodeReservation("RES" + System.currentTimeMillis());
+        // 4. Créer la réservation
+        Reservation reservation = new Reservation();
+        reservation.setCodeReservation("RES-" + System.currentTimeMillis());
+        reservation.setVoyage(voyage);
+        reservation.setClient(client);
+        reservation.setNombrePlaces(nombrePlaces);
+        reservation.setStatut("EN_ATTENTE");
+        reservation.setDateReservation(LocalDateTime.now());
         
-        // Calculer montant
-        BigDecimal total = voyage.getPrixParPlace()
-            .multiply(BigDecimal.valueOf(reservation.getNombrePlaces()));
-        reservation.setMontantTotal(total);
-        reservation.setMontantRestant(total.subtract(reservation.getMontantPaye()));
+        // 5. Calculer montant (via VoyageService)
+        BigDecimal montant = voyageService.calculerMontantReservation(voyageId, nombrePlaces);
+        reservation.setMontantTotal(montant);
+        reservation.setMontantPaye(BigDecimal.ZERO);
+        reservation.setMontantRestant(montant);
         
-        // Mettre à jour places disponibles
-        voyage.setNombrePlacesDisponibles(
-            voyage.getNombrePlacesDisponibles() - reservation.getNombrePlaces()
-        );
-        voyageRepository.save(voyage);
-        
+        // 6. Sauvegarder
         return reservationRepository.save(reservation);
+        
+        // NOTE : Les places ne sont PAS mises à jour dans Voyage
+        // car elles sont calculées EN TEMPS RÉEL via la vue SQL v_voyage_disponibilite
     }
-
-    // Réservation rapide par villes/date/heure
-    public Reservation reserverPlaces(Long clientId, String villeDepart, String villeArrivee, LocalDate date, int heure, int nombrePlaces) {
+    
+    /**
+     * Ancien flux (à conserver pour compatibilité)
+     * Réservation rapide par villes/date/heure
+     */
+    public Reservation reserverPlaces(Long clientId, String villeDepart, String villeArrivee, 
+                                      LocalDate date, int heure, int nombrePlaces) {
         Trajet trajet = trajetRepository.findByVilleDepartAndVilleArrivee(villeDepart, villeArrivee);
         if (trajet == null) throw new RuntimeException("Trajet non trouvé");
 
-        List<Voyage> voyages = voyageRepository.findVoyagesByVillesAndDateHeure(villeDepart, villeArrivee, date, heure);
-        Voyage voyage = voyages.stream().filter(v -> v.getNombrePlacesDisponibles() >= nombrePlaces).findFirst().orElse(null);
+        List<Voyage> voyages = voyageRepository.findVoyagesByVillesAndDateHeure(
+            villeDepart, villeArrivee, date, heure);
+        
+        Voyage voyage = voyages.stream()
+            .filter(v -> {
+                int placesReservees = reservationRepository
+                    .findByVoyageIdAndStatutNot(v.getId(), "ANNULE")
+                    .stream()
+                    .mapToInt(Reservation::getNombrePlaces)
+                    .sum();
+                int placesDisponibles = v.getVehicule().getNombrePlaces() - placesReservees;
+                return placesDisponibles >= nombrePlaces;
+            })
+            .findFirst()
+            .orElse(null);
+        
         if (voyage == null) throw new RuntimeException("Aucun voyage disponible");
-
-        if (voyage.getNombrePlacesDisponibles() < nombrePlaces) throw new RuntimeException("Pas assez de places disponibles");
 
         Personne client = personneRepository.findById(clientId).orElseThrow();
         Reservation reservation = new Reservation();
@@ -81,99 +129,127 @@ public class ReservationService {
         reservation.setMontantTotal(voyage.getPrixParPlace().multiply(BigDecimal.valueOf(nombrePlaces)));
         reservation.setStatut("EN_ATTENTE");
         reservation.setDateReservation(LocalDateTime.now());
-        reservation.setCodeReservation("RES" + System.currentTimeMillis());
+        reservation.setCodeReservation("RES-" + System.currentTimeMillis());
         reservation.setMontantPaye(BigDecimal.ZERO);
         reservation.setMontantRestant(reservation.getMontantTotal());
-        reservationRepository.save(reservation);
-
-        voyage.setNombrePlacesDisponibles(voyage.getNombrePlacesDisponibles() - nombrePlaces);
-        voyageRepository.save(voyage);
-
-        return reservation;
+        
+        return reservationRepository.save(reservation);
     }
     
-    public Reservation effectuerPaiement(Long reservationId, BigDecimal montant, String mode, String moment) {
-        Reservation res = reservationRepository.findById(reservationId).orElseThrow();
+    // ============================================
+    // GÉRER PAIEMENTS
+    // ============================================
+    
+    /**
+     * Effectue un paiement sur une réservation
+     */
+    public Reservation effectuerPaiement(Long reservationId, BigDecimal montant, 
+                                        String mode, String moment) {
+        Reservation res = reservationRepository.findById(reservationId)
+            .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
         
-        // Créer paiement
+        // Vérifier le montant
+        if (montant.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("Montant invalide");
+        }
+        
+        if (montant.compareTo(res.getMontantRestant()) > 0) {
+            throw new RuntimeException(
+                String.format("Montant trop élevé. Restant: %s", res.getMontantRestant())
+            );
+        }
+        
+        // Créer le paiement
         Paiement paiement = new Paiement();
-        paiement.setCodePaiement("PAY" + System.currentTimeMillis());
+        paiement.setCodePaiement("PAY-" + System.currentTimeMillis());
         paiement.setTypePaiement("RESERVATION");
         paiement.setReferenceId(reservationId);
         paiement.setMontant(montant);
         paiement.setModePaiement(mode);
         paiement.setMomentPaiement(moment);
+        paiement.setDatePaiement(LocalDateTime.now());
         paiementRepo.save(paiement);
         
         // Mettre à jour réservation
         res.setMontantPaye(res.getMontantPaye().add(montant));
         res.setMontantRestant(res.getMontantTotal().subtract(res.getMontantPaye()));
         
+        // Mettre à jour statut
         if (res.getMontantRestant().compareTo(BigDecimal.ZERO) <= 0) {
             res.setStatut("PAYE");
         } else {
             res.setStatut("CONFIRME");
         }
         
+        res.setDateModification(LocalDateTime.now());
         return reservationRepository.save(res);
     }
     
+    // ============================================
+    // ANNULER RÉSERVATION
+    // ============================================
+    
+    /**
+     * Annule une réservation
+     * Redonne les places au voyage
+     * Notifie la liste d'attente
+     */
     public void annulerReservation(Long reservationId) {
-        Reservation res = reservationRepository.findById(reservationId).orElseThrow();
+        Reservation res = reservationRepository.findById(reservationId)
+            .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
         
-        // Libérer les places
-        Voyage voyage = res.getVoyage();
-        voyage.setNombrePlacesDisponibles(
-            voyage.getNombrePlacesDisponibles() + res.getNombrePlaces()
-        );
-        voyageRepository.save(voyage);
+        if ("ANNULE".equals(res.getStatut())) {
+            throw new RuntimeException("Réservation déjà annulée");
+        }
         
+        // Marquer comme annulée
         res.setStatut("ANNULE");
+        res.setDateModification(LocalDateTime.now());
         reservationRepository.save(res);
         
-        // Notifier liste d'attente
+        // Les places sont automatiquement recalculées via la VUE SQL
+        
+        // Notifier la liste d'attente
+        Voyage voyage = res.getVoyage();
         List<ListeAttente> attentes = listeAttenteRepo
             .findByTrajetIdAndStatut(voyage.getTrajet().getId(), "EN_ATTENTE");
         
         for (ListeAttente attente : attentes) {
-            if (attente.getNombrePlacesDemandees() <= voyage.getNombrePlacesDisponibles()) {
+            // Vérifier si le nombre de places demandées est maintenant disponible
+            int placesReservees = reservationRepository
+                .findByVoyageIdAndStatutNot(voyage.getId(), "ANNULE")
+                .stream()
+                .mapToInt(Reservation::getNombrePlaces)
+                .sum();
+            
+            int placesDisponibles = voyage.getVehicule().getNombrePlaces() - placesReservees;
+            
+            if (attente.getNombrePlacesDemandees() <= placesDisponibles) {
                 attente.setStatut("NOTIFIE");
                 attente.setDateNotification(LocalDateTime.now());
                 listeAttenteRepo.save(attente);
-                break;
+                break; // Notifier un seul pour cette date
             }
         }
     }
-
-    public Reservation reserverPlaces(Long clientId, String villeDepart, String villeArrivee, LocalDate date, LocalTime heure, int nombrePlaces) {
-        // 1. Chercher le trajet
-        Trajet trajet = trajetRepository.findByVilleDepartAndVilleArrivee(villeDepart, villeArrivee);
-        if (trajet == null) throw new RuntimeException("Trajet non trouvé");
-
-        // 2. Chercher le voyage correspondant (date/heure)
-        LocalDateTime dateDepart = LocalDateTime.of(date, heure);
-        List<Voyage> voyages = voyageRepository.findByTrajet_VilleDepartAndTrajet_VilleArriveeAndDateDepart(villeDepart, villeArrivee, dateDepart);
-        Voyage voyage = voyages.stream().filter(v -> v.getNombrePlacesDisponibles() >= nombrePlaces).findFirst().orElse(null);
-        if (voyage == null) throw new RuntimeException("Aucun voyage disponible");
-
-        // 3. Vérifier la capacité de la voiture
-        if (voyage.getNombrePlacesDisponibles() < nombrePlaces) throw new IllegalArgumentException("Pas assez de places");
-
-        // 4. Créer la réservation
-        Personne client = personneRepository.findById(clientId).orElseThrow();
-        Reservation reservation = new Reservation();
-        reservation.setVoyage(voyage);
-        reservation.setClient(client);
-        reservation.setNombrePlaces(nombrePlaces);
-        reservation.setMontantTotal(voyage.getPrixParPlace().multiply(BigDecimal.valueOf(nombrePlaces)));
-        reservation.setStatut("EN_ATTENTE");
-        reservation.setDateReservation(LocalDateTime.now());
-        reservationRepository.save(reservation);
-
-        // 5. Mettre à jour le nombre de places disponibles
-        voyage.setNombrePlacesDisponibles(voyage.getNombrePlacesDisponibles() - nombrePlaces);
-        voyageRepository.save(voyage);
-
-        return reservation;
+    
+    // ============================================
+    // CONFIRMATIONS (après paiement)
+    // ============================================
+    
+    /**
+     * Confirme une réservation (après paiement minimum)
+     */
+    public Reservation confirmerReservation(Long reservationId) {
+        Reservation res = reservationRepository.findById(reservationId)
+            .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
+        
+        if (!"EN_ATTENTE".equals(res.getStatut())) {
+            throw new RuntimeException("Réservation déjà confirmée");
+        }
+        
+        res.setStatut("CONFIRME");
+        res.setDateModification(LocalDateTime.now());
+        return reservationRepository.save(res);
     }
 }

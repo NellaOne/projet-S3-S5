@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
 @Data @NoArgsConstructor @AllArgsConstructor
 public class Personne {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_personne")
     private Long id;
     
     @Column(nullable = false, length = 50)
@@ -50,8 +51,6 @@ public class Personne {
     
     @Column(length = 50)
     private String statut = "ACTIF"; // ACTIF, INACTIF, CONGE, SUSPENDU
-    
-    private String photoUrl;
     
     @Column(columnDefinition = "TEXT")
     private String remarques;

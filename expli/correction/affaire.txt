@@ -1,0 +1,56 @@
+affaire :
+    -affichage
+    -metier
+    -base
+
+affichage :
+    -dessin d'ecran
+    -par exemple si fonctionnalité demander : reservation de quelque chose comme par exemple pour le theme cinema : reservation de place pour regarder un film
+    -on doit avoir un formulaire d'insertion pour pouvoir faire la reservation de la personne(du client)
+    -titre : enregistrement de ... ou achat-billet
+    -ce qu'il y a :
+        .on choisit le film à regarder => liste deroulante
+        et cette liste deroulante, on doit preciser d'ou elle vient, ou est ce qu'on la prends ? 
+        en principe on devrait la prendre de la "session_film" et non de "liste_film"
+        car les champs en bas de cette liste deroulante de choix de film qui peuvent aussi etre des listes deroulantes doivent etre depedantes de ce champ
+        de liste deroulante de choix de film
+        car si on fait que c'est la table "film" ou "liste_film" par exemple qu'on ait prise la liste deroulante de choix de film => alors ça voudrait dire que 
+        toutes les dates peuvent etre choisis donc le fait qu'on puisse regarder un film à une date et heure precise ou y'a pas de session et qui n'est meme pas 
+        diffusé est possible
+        tous cela est une notion de session de film qui dit qu'un film à une date à une heure à cette salle, (=> données)
+        meme film, meme date, meme heure mais diffente salle
+        meme film, meme date, differente heure, differente salle 
+        donc en gros on a beaucoup de listes de session d'un film
+        donc quand on regarde un film, ce qui interresse tout d'abord d'une maniere logique c'est le nom du film
+        donc on donne par exemple nom du film : avatar => choix du client
+        puis apres marche le UI/UX, experience utilisateur => c'est nous meme en tant qu'humain (user) on doit savoir que si on veut regarder un film c'est pas 
+        n'importe quel film à n'importe quelle date et n'importe quelle heure mais logiquement quand quelqu'un veut regarder un film, c'est le film d'abord
+        que la personne cherche puis apres s'affiche dynamiquement en bas(UI/UX) voici les dates ou on peut avoir le choix, puis apres choix de date, s'affiche 
+        apres les heures disponibles ou on peut avoir le choix par contre c'est pas le cas de salle parce que c'est pas logique que quelqu'un refuse de voir un film
+        si elle est pas dans tel ou telle salle
+        donc sur l'affichage c'est le logique de cela qu'on attends de nous pour le "à faire"
+        qu'est ce qui est populaire en premier ? quel est le champ premier ? on determine par la liste deroulante du session_film puis dependant de ça apres date 
+        en gros c'est ce qu'on attends de nous pour l'affichage
+
+        enchainement information 
+        lier logique metier => ce qu'on fait
+        pas seulement des formulaires d'affichage tout bete
+        notion de metier de theme du projet en s'inspirant de la vie réelle quotidienne
+
+metier :
+    -dans metier on a classe film, salle, session_film
+    -dedans y'a plusieurs attributs
+    -car apres quand on clique la liste deroulante de l'affichage, dans un film => on choisit deja => devrait pouvoir retourner un tableau de date
+    -voici les dates disponibles pour ce film
+    -dans une date => peut retourner un tableau d'heure
+    -or tous cela aboutit à un objet => session_film
+    -alors on jouera principalement avec session_film
+    - c'est le concept objet => qu'on nous evalue avec le metier du "à faire"
+    -qaund on clique sur "OK" => on appelle une fonction, ou elle se trouve, quelle est sa signature ?
+    -important dans la signature => valeur de retour, params dans la fonction, vue ou table qu'on a utiliser pour collecter l'information
+
+base :
+    -mcd
+    -si vue => on doit preciser : nom, table principale, left join avec cette colonne de cette table
+
+

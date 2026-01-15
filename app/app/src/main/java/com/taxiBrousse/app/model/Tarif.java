@@ -20,6 +20,7 @@ import lombok.NoArgsConstructor;
 @Data @NoArgsConstructor @AllArgsConstructor
 public class Tarif {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_tarif")
     private Long id;
     
     @ManyToOne
